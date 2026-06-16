@@ -21,7 +21,7 @@ import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
 
 const nodeTypes = { personNode: PersonNode };
 
-type PendingRelation = { type: "spouse" | "child"; anchorId: string };
+type PendingRelation = { type: "spouse" | "child" | "parent"; anchorId: string };
 
 export default function TreePage() {
   const [persons, setPersons] = useState<Person[]>([]);
@@ -93,16 +93,23 @@ export default function TreePage() {
     refresh();
   };
 
-  // Create new person then immediately link as spouse or child
+  // Create new person then immediately link
   const handleCreateAndLink = async (data: Omit<Person, "id">) => {
     if (!pendingRelation) return;
     const newPerson = await personsApi.create(data);
     if (pendingRelation.type === "spouse") {
       await marriagesApi.create({ spouse1Id: pendingRelation.anchorId, spouse2Id: newPerson.id });
-    } else {
+    } else if (pendingRelation.type === "child") {
       await relationshipsApi.create({ parentId: pendingRelation.anchorId, childId: newPerson.id });
+    } else {
+      await relationshipsApi.create({ parentId: newPerson.id, childId: pendingRelation.anchorId });
     }
     setPendingRelation(null);
+    refresh(selected);
+  };
+
+  const handleAddParent = async (parentId: string, childId: string) => {
+    await relationshipsApi.create({ parentId, childId });
     refresh(selected);
   };
 
@@ -135,10 +142,12 @@ export default function TreePage() {
   const modalTitle = pendingRelation
     ? pendingRelation.type === "spouse"
       ? "Thêm vợ/chồng mới"
-      : "Thêm con mới"
+      : pendingRelation.type === "child"
+      ? "Thêm con mới"
+      : "Thêm cha/mẹ mới"
     : "Thêm người";
 
-  const defaultLastName = pendingRelation?.type === "child"
+  const defaultLastName = pendingRelation?.type === "child" || pendingRelation?.type === "parent"
     ? persons.find((p) => p.id === pendingRelation.anchorId)?.lastName
     : pendingRelation?.type === "spouse"
     ? undefined
@@ -189,8 +198,10 @@ export default function TreePage() {
             onClose={() => setSelected(null)}
             onEdit={(p) => setEditTarget(p)}
             onDelete={handleDeletePerson}
+            onAddParent={handleAddParent}
             onAddChild={handleAddChild}
             onAddSpouse={handleAddSpouse}
+            onCreateAndAddParent={(childId) => setPendingRelation({ type: "parent", anchorId: childId })}
             onCreateAndAddSpouse={(anchorId) => setPendingRelation({ type: "spouse", anchorId })}
             onCreateAndAddChild={(anchorId) => setPendingRelation({ type: "child", anchorId })}
           />

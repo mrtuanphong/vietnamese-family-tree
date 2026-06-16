@@ -15,8 +15,10 @@ interface PersonSidebarProps {
   onClose: () => void;
   onEdit: (p: Person) => void;
   onDelete: (id: string) => void;
+  onAddParent: (parentId: string, childId: string) => void;
   onAddChild: (parentId: string, childId: string) => void;
   onAddSpouse: (spouse1Id: string, spouse2Id: string) => void;
+  onCreateAndAddParent: (childId: string) => void;
   onCreateAndAddChild: (parentId: string) => void;
   onCreateAndAddSpouse: (personId: string) => void;
 }
@@ -34,8 +36,10 @@ export default function PersonSidebar({
   onClose,
   onEdit,
   onDelete,
+  onAddParent,
   onAddChild,
   onAddSpouse,
+  onCreateAndAddParent,
   onCreateAndAddChild,
   onCreateAndAddSpouse,
 }: PersonSidebarProps) {
@@ -67,6 +71,14 @@ export default function PersonSidebar({
       !children.find((x) => x.id === p.id) &&
       !spouses.find((x) => x.id === p.id)
   );
+
+  const handleAddParent = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    e.target.value = "";
+    if (!val) return;
+    if (val === NEW_PERSON_SENTINEL) { onCreateAndAddParent(person.id); return; }
+    onAddParent(val, person.id);
+  };
 
   const handleAddSpouse = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -124,6 +136,12 @@ export default function PersonSidebar({
             {parents.map((p) => <li key={p.id}>{fullName(p)}</li>)}
           </ul>
         )}
+        <select onChange={handleAddParent} className="mt-2 w-full border rounded px-2 py-1 text-xs">
+          <option value="">+ Thêm cha/mẹ</option>
+          <option value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</option>
+          {unrelated.length > 0 && <option disabled>──────────────</option>}
+          {unrelated.map((p) => <option key={p.id} value={p.id}>{fullName(p)}</option>)}
+        </select>
       </div>
 
       <div className="px-4 py-3 border-b">
