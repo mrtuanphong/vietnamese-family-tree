@@ -46,10 +46,12 @@ export default function TreePage() {
 
   const rebuild = (data: FamilyTreeData, selectPerson?: Person | null) => {
     const { nodes: n, edges: e } = buildTreeGraph(data);
+    const selectedId = selectPerson?.id ?? null;
     const withHandlers = n.map((node) => ({
       ...node,
       data: {
         ...node.data,
+        isSelected: node.id === selectedId,
         onSelect: (person: Person) => setSelected(person),
       },
     }));
@@ -64,6 +66,16 @@ export default function TreePage() {
   useEffect(() => {
     load().then(({ p, r, m }) => rebuild({ persons: p, relationships: r, marriages: m }));
   }, []);
+
+  // Sync isSelected on nodes when selected changes
+  useEffect(() => {
+    setNodes((prev) =>
+      prev.map((node) => ({
+        ...node,
+        data: { ...node.data, isSelected: node.id === (selected?.id ?? null) },
+      }))
+    );
+  }, [selected]);
 
   const refresh = async (keepSelected?: Person | null) => {
     const { p, r, m } = await load();

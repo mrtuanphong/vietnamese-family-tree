@@ -7,11 +7,12 @@ import type { Person } from "@/types";
 
 interface PersonNodeData {
   person: Person;
+  isSelected: boolean;
   onSelect: (p: Person) => void;
 }
 
 export default function PersonNode({ data }: { data: PersonNodeData }) {
-  const { person, onSelect } = data;
+  const { person, isSelected, onSelect } = data;
   const name = [person.lastName, person.firstName].filter(Boolean).join(" ");
   const years = [
     person.birthDate?.slice(0, 4),
@@ -20,17 +21,21 @@ export default function PersonNode({ data }: { data: PersonNodeData }) {
     .filter(Boolean)
     .join("–");
 
-  const borderColor =
-    person.gender === "male"
-      ? "border-blue-400"
-      : person.gender === "female"
-      ? "border-pink-400"
-      : "border-gray-300";
+  const borderColor = isSelected
+    ? "border-amber-400"
+    : person.gender === "male"
+    ? "border-blue-400"
+    : person.gender === "female"
+    ? "border-pink-400"
+    : "border-gray-300";
+
+  const bg = isSelected ? "bg-amber-50" : "bg-white";
+  const shadow = isSelected ? "shadow-md ring-2 ring-amber-300" : "shadow-sm";
 
   return (
     <div
       onClick={() => onSelect(person)}
-      className={`bg-white rounded-lg border-2 ${borderColor} shadow-sm w-36 cursor-pointer hover:shadow-md transition-shadow`}
+      className={`${bg} rounded-lg border-2 ${borderColor} ${shadow} w-36 cursor-pointer hover:shadow-md transition-all`}
     >
       <Handle type="target" position={Position.Top} className="!bg-gray-400" />
       <div className="p-2 flex flex-col items-center gap-1">
