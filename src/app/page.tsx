@@ -56,7 +56,7 @@ export default function PeoplePage() {
   const handleDelete = async (id: string) => {
     const person = persons.find((p) => p.id === id);
     const name = person ? fullName(person) : "người này";
-    if (!confirm(`Xoá "${name}" khỏi danh sách?`)) return;
+    if (!confirm(`Xoá "${name}" khỏi dòng họ?`)) return;
     await personsApi.delete(id);
     load();
   };
