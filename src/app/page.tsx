@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { personsApi } from "@/lib/api";
+import { personsApi, clanApi } from "@/lib/api";
 import { getAvatarUrl } from "@/lib/avatar";
 import Modal from "@/components/ui/Modal";
 import PersonForm from "@/components/person/PersonForm";
@@ -21,6 +21,7 @@ function yearOf(dateStr?: string | null) {
 export default function PeoplePage() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [clanName, setClanName] = useState<string>("Gia Phả Việt Nam");
+  const [superAdminId, setSuperAdminId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [editTarget, setEditTarget] = useState<Person | null>(null);
@@ -29,9 +30,10 @@ export default function PeoplePage() {
 
   useEffect(() => {
     load();
-    import("@/lib/api").then(({ clanApi }) =>
-      clanApi.get().then((c) => { if (c?.name) setClanName(c.name); })
-    );
+    clanApi.get().then((c) => {
+      if (c?.name) setClanName(c.name);
+      if (c?.superAdminId) setSuperAdminId(c.superAdminId);
+    });
   }, []);
 
   const filtered = persons.filter((p) =>
@@ -117,7 +119,14 @@ export default function PeoplePage() {
                         height={36}
                         className="rounded-full"
                       />
-                      <span className="font-medium">{fullName(p)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{fullName(p)}</span>
+                        {p.id === superAdminId && (
+                          <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">
+                            Super Admin
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
@@ -130,9 +139,11 @@ export default function PeoplePage() {
                       <button onClick={() => setEditTarget(p)} className="text-xs px-2 py-1 border rounded hover:bg-gray-100">
                         Sửa
                       </button>
-                      <button onClick={() => handleDelete(p.id)} className="text-xs px-2 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50">
-                        Xoá
-                      </button>
+                      {p.id !== superAdminId && (
+                        <button onClick={() => handleDelete(p.id)} className="text-xs px-2 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50">
+                          Xoá
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
