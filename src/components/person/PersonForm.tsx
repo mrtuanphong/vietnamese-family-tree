@@ -25,6 +25,7 @@ function makeEmpty(defaultLastName?: string): PersonFormData {
     phone: "",
     photoUrl: "",
     bio: "",
+    generation: null,
   };
 }
 
@@ -47,7 +48,7 @@ export default function PersonForm({ initial, defaultLastName, onSubmit, onCance
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className="text-sm font-medium">Họ *</label>
           <input required value={form.lastName} onChange={set("lastName")} className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="Nguyễn" />
@@ -71,7 +72,7 @@ export default function PersonForm({ initial, defaultLastName, onSubmit, onCance
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium">Ngày sinh</label>
           <input type="date" value={form.birthDate ?? ""} onChange={set("birthDate")} className="mt-1 w-full border rounded px-3 py-2 text-sm" />
@@ -82,7 +83,7 @@ export default function PersonForm({ initial, defaultLastName, onSubmit, onCance
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium">Ngày mất</label>
           <input type="date" value={form.deathDate ?? ""} onChange={set("deathDate")} className="mt-1 w-full border rounded px-3 py-2 text-sm" />
@@ -96,6 +97,17 @@ export default function PersonForm({ initial, defaultLastName, onSubmit, onCance
       <div>
         <label className="text-sm font-medium">Số điện thoại</label>
         <input value={form.phone ?? ""} onChange={set("phone")} type="tel" className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="0912 345 678" />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-gray-500">Đời (thế hệ)</label>
+        <input
+          type="text"
+          value={form.generation != null ? `Đời ${form.generation}` : ""}
+          disabled
+          placeholder="Tự động tính dựa vào đời của Super Admin hoặc các mối quan hệ liên quan"
+          className="mt-1 w-full border rounded px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed placeholder:text-gray-400 placeholder:italic"
+        />
       </div>
 
       <div>

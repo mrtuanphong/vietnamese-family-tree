@@ -21,6 +21,9 @@ interface PersonSidebarProps {
   onCreateAndAddParent: (childId: string) => void;
   onCreateAndAddChild: (parentId: string) => void;
   onCreateAndAddSpouse: (personId: string) => void;
+  onRemoveParent: (relationshipId: string) => void;
+  onRemoveChild: (relationshipId: string) => void;
+  onRemoveSpouse: (marriageId: string) => void;
 }
 
 function fullName(p: Person) {
@@ -42,34 +45,41 @@ export default function PersonSidebar({
   onCreateAndAddParent,
   onCreateAndAddChild,
   onCreateAndAddSpouse,
+  onRemoveParent,
+  onRemoveChild,
+  onRemoveSpouse,
 }: PersonSidebarProps) {
   const isSuperAdmin = person.id === superAdminId;
   const personMap = new Map(allPersons.map((p) => [p.id, p]));
 
   const parents = relationships
     .filter((r) => r.childId === person.id)
-    .map((r) => personMap.get(r.parentId))
-    .filter(Boolean) as Person[];
+    .flatMap((r) => {
+      const p = personMap.get(r.parentId);
+      return p ? [{ relId: r.id, person: p }] : [];
+    });
 
   const children = relationships
     .filter((r) => r.parentId === person.id)
-    .map((r) => personMap.get(r.childId))
-    .filter(Boolean) as Person[];
+    .flatMap((r) => {
+      const p = personMap.get(r.childId);
+      return p ? [{ relId: r.id, person: p }] : [];
+    });
 
   const spouses = marriages
     .filter((m) => m.spouse1Id === person.id || m.spouse2Id === person.id)
-    .map((m) => {
+    .flatMap((m) => {
       const otherId = m.spouse1Id === person.id ? m.spouse2Id : m.spouse1Id;
-      return personMap.get(otherId);
-    })
-    .filter(Boolean) as Person[];
+      const p = personMap.get(otherId);
+      return p ? [{ marriageId: m.id, person: p }] : [];
+    });
 
   const unrelated = allPersons.filter(
     (p) =>
       p.id !== person.id &&
-      !parents.find((x) => x.id === p.id) &&
-      !children.find((x) => x.id === p.id) &&
-      !spouses.find((x) => x.id === p.id)
+      !parents.find((x) => x.person.id === p.id) &&
+      !children.find((x) => x.person.id === p.id) &&
+      !spouses.find((x) => x.person.id === p.id)
   );
 
   const handleAddParent = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -97,7 +107,7 @@ export default function PersonSidebar({
   };
 
   return (
-    <div className="w-72 bg-white border-l h-full flex flex-col overflow-y-auto">
+    <div className="fixed bottom-16 left-0 right-0 z-20 max-h-[65vh] rounded-t-2xl shadow-2xl sm:static sm:bottom-auto sm:w-72 sm:max-h-none sm:z-auto sm:rounded-none sm:shadow-none bg-white border-t sm:border-t-0 sm:border-l flex flex-col overflow-y-auto">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <span className="font-semibold text-sm">Chi tiết</span>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
@@ -106,11 +116,18 @@ export default function PersonSidebar({
       <div className="p-4 flex flex-col items-center gap-2 border-b">
         <Image src={getAvatarUrl(person.gender)} alt="" width={72} height={72} className="rounded-full" />
         <p className="font-bold text-center">{fullName(person)}</p>
-        {isSuperAdmin && (
-          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-            Super Admin
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
+          {isSuperAdmin && (
+            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+              Super Admin
+            </span>
+          )}
+          {person.generation != null && (
+            <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+              Đời {person.generation}
+            </span>
+          )}
+        </div>
         <p className="text-xs text-gray-500">
           {person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Không rõ"}
         </p>
@@ -132,8 +149,19 @@ export default function PersonSidebar({
       <div className="px-4 py-3 border-b">
         <p className="text-xs text-gray-500 font-medium mb-2">Cha/Mẹ</p>
         {parents.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
-          <ul className="text-sm space-y-1">
-            {parents.map((p) => <li key={p.id}>{fullName(p)}</li>)}
+          <ul className="space-y-1">
+            {parents.map(({ relId, person: p }) => (
+              <li key={relId} className="flex items-center justify-between gap-2 text-sm">
+                <span>{fullName(p)}</span>
+                <button
+                  onClick={() => onRemoveParent(relId)}
+                  className="text-xs text-gray-400 hover:text-red-500 shrink-0"
+                  title="Xoá quan hệ"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
           </ul>
         )}
         <select onChange={handleAddParent} className="mt-2 w-full border rounded px-2 py-1 text-xs">
@@ -147,8 +175,19 @@ export default function PersonSidebar({
       <div className="px-4 py-3 border-b">
         <p className="text-xs text-gray-500 font-medium mb-2">Vợ/Chồng</p>
         {spouses.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
-          <ul className="text-sm space-y-1">
-            {spouses.map((p) => <li key={p.id}>{fullName(p)}</li>)}
+          <ul className="space-y-1">
+            {spouses.map(({ marriageId, person: p }) => (
+              <li key={marriageId} className="flex items-center justify-between gap-2 text-sm">
+                <span>{fullName(p)}</span>
+                <button
+                  onClick={() => onRemoveSpouse(marriageId)}
+                  className="text-xs text-gray-400 hover:text-red-500 shrink-0"
+                  title="Xoá quan hệ"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
           </ul>
         )}
         <select onChange={handleAddSpouse} className="mt-2 w-full border rounded px-2 py-1 text-xs">
@@ -162,8 +201,19 @@ export default function PersonSidebar({
       <div className="px-4 py-3 border-b">
         <p className="text-xs text-gray-500 font-medium mb-2">Con cái</p>
         {children.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
-          <ul className="text-sm space-y-1">
-            {children.map((p) => <li key={p.id}>{fullName(p)}</li>)}
+          <ul className="space-y-1">
+            {children.map(({ relId, person: p }) => (
+              <li key={relId} className="flex items-center justify-between gap-2 text-sm">
+                <span>{fullName(p)}</span>
+                <button
+                  onClick={() => onRemoveChild(relId)}
+                  className="text-xs text-gray-400 hover:text-red-500 shrink-0"
+                  title="Xoá quan hệ"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
           </ul>
         )}
         <select onChange={handleAddChild} className="mt-2 w-full border rounded px-2 py-1 text-xs">

@@ -1,8 +1,14 @@
 import { prisma } from "@/lib/prisma";
+import { recalculateGenerations } from "@/lib/recalculateGenerations";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  await prisma.marriage.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  try {
+    const { id } = await params;
+    await prisma.marriage.delete({ where: { id } });
+    await recalculateGenerations();
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }

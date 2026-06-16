@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   useNodesState,
   useEdgesState,
+  type ReactFlowInstance,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import Link from "next/link";
@@ -17,6 +19,7 @@ import PersonSidebar from "@/components/tree/PersonSidebar";
 import Modal from "@/components/ui/Modal";
 import PersonForm from "@/components/person/PersonForm";
 import { clanApi } from "@/lib/api";
+import BottomTabBar from "@/components/ui/BottomTabBar";
 import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
 
 const nodeTypes = { personNode: PersonNode };
@@ -24,6 +27,9 @@ const nodeTypes = { personNode: PersonNode };
 type PendingRelation = { type: "spouse" | "child" | "parent"; anchorId: string };
 
 export default function TreePage() {
+  const searchParams = useSearchParams();
+  const urlSelectedId = searchParams.get("selected");
+
   const [persons, setPersons] = useState<Person[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [marriages, setMarriages] = useState<Marriage[]>([]);
@@ -33,6 +39,7 @@ export default function TreePage() {
   const [editTarget, setEditTarget] = useState<Person | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [superAdminId, setSuperAdminId] = useState<string | null>(null);
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   // null = plain add, non-null = create-then-link
   const [pendingRelation, setPendingRelation] = useState<PendingRelation | null>(null);
 
@@ -56,6 +63,7 @@ export default function TreePage() {
       data: {
         ...node.data,
         isSelected: node.id === selectedId,
+        isSuperAdmin: node.id === superAdminId,
         onSelect: (person: Person) => setSelected(person),
       },
     }));
@@ -67,19 +75,36 @@ export default function TreePage() {
     }
   };
 
+  const [initialLoaded, setInitialLoaded] = useState(false);
+
   useEffect(() => {
-    load().then(({ p, r, m }) => rebuild({ persons: p, relationships: r, marriages: m }));
+    load().then(({ p, r, m }) => {
+      const preselect = urlSelectedId ? p.find((x) => x.id === urlSelectedId) ?? null : null;
+      rebuild({ persons: p, relationships: r, marriages: m }, preselect);
+      setInitialLoaded(true);
+    });
     clanApi.get().then((c) => { if (c?.superAdminId) setSuperAdminId(c.superAdminId); });
   }, []);
+
+  useEffect(() => {
+    if (!initialLoaded || !rfInstance || !urlSelectedId) return;
+    setTimeout(() => {
+      rfInstance.fitView({ nodes: [{ id: urlSelectedId }], duration: 500, padding: 0.5 });
+    }, 100);
+  }, [initialLoaded, rfInstance, urlSelectedId]);
 
   useEffect(() => {
     setNodes((prev) =>
       prev.map((node) => ({
         ...node,
-        data: { ...node.data, isSelected: node.id === (selected?.id ?? null) },
+        data: {
+          ...node.data,
+          isSelected: node.id === (selected?.id ?? null),
+          isSuperAdmin: node.id === superAdminId,
+        },
       }))
     );
-  }, [selected]);
+  }, [selected, superAdminId]);
 
   const refresh = async (keepSelected?: Person | null) => {
     const { p, r, m } = await load();
@@ -139,6 +164,21 @@ export default function TreePage() {
     refresh(selected);
   };
 
+  const handleRemoveParent = async (relationshipId: string) => {
+    await relationshipsApi.delete(relationshipId);
+    refresh(selected);
+  };
+
+  const handleRemoveChild = async (relationshipId: string) => {
+    await relationshipsApi.delete(relationshipId);
+    refresh(selected);
+  };
+
+  const handleRemoveSpouse = async (marriageId: string) => {
+    await marriagesApi.delete(marriageId);
+    refresh(selected);
+  };
+
   const modalTitle = pendingRelation
     ? pendingRelation.type === "spouse"
       ? "Thêm vợ/chồng mới"
@@ -159,10 +199,10 @@ export default function TreePage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="bg-white border-b px-6 py-3 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
-          <h1 className="text-lg font-bold">Cây Gia Phả</h1>
+      <header className="bg-white border-b px-3 sm:px-6 py-3 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Link href="/" className="hidden sm:block text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
+          <h1 className="text-base sm:text-lg font-bold">Cây Gia Phả</h1>
         </div>
         <button
           onClick={() => setShowAdd(true)}
@@ -180,13 +220,21 @@ export default function TreePage() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
-            fitView
+            fitView={!urlSelectedId}
+            onInit={setRfInstance}
           >
             <Background />
             <Controls />
             <MiniMap />
           </ReactFlow>
         </div>
+
+        {selected && (
+          <div
+            className="fixed inset-0 bg-black/30 z-10 sm:hidden"
+            onClick={() => setSelected(null)}
+          />
+        )}
 
         {selected && (
           <PersonSidebar
@@ -204,9 +252,14 @@ export default function TreePage() {
             onCreateAndAddParent={(childId) => setPendingRelation({ type: "parent", anchorId: childId })}
             onCreateAndAddSpouse={(anchorId) => setPendingRelation({ type: "spouse", anchorId })}
             onCreateAndAddChild={(anchorId) => setPendingRelation({ type: "child", anchorId })}
+            onRemoveParent={handleRemoveParent}
+            onRemoveChild={handleRemoveChild}
+            onRemoveSpouse={handleRemoveSpouse}
           />
         )}
       </div>
+
+      <BottomTabBar />
 
       {/* Plain add */}
       {showAdd && (

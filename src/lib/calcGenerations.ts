@@ -1,23 +1,29 @@
-import type { Person, Relationship } from "@/types";
+import type { Person, Relationship, Marriage } from "@/types";
 
 export function calcGenerations(
   persons: Person[],
   relationships: Relationship[],
+  marriages: Marriage[],
   superAdminId: string,
   superAdminGeneration: number
 ): Map<string, number> {
   const result = new Map<string, number>();
 
-  // Build bidirectional adjacency: id → { parents, children }
   const parents = new Map<string, string[]>();
   const children = new Map<string, string[]>();
+  const spouses = new Map<string, string[]>();
   for (const p of persons) {
     parents.set(p.id, []);
     children.set(p.id, []);
+    spouses.set(p.id, []);
   }
   for (const rel of relationships) {
     parents.get(rel.childId)?.push(rel.parentId);
     children.get(rel.parentId)?.push(rel.childId);
+  }
+  for (const m of marriages) {
+    spouses.get(m.spouse1Id)?.push(m.spouse2Id);
+    spouses.get(m.spouse2Id)?.push(m.spouse1Id);
   }
 
   // BFS from super admin
@@ -38,6 +44,12 @@ export function calcGenerations(
       if (!result.has(childId)) {
         result.set(childId, gen + 1);
         queue.push(childId);
+      }
+    }
+    for (const spouseId of spouses.get(id) ?? []) {
+      if (!result.has(spouseId)) {
+        result.set(spouseId, gen);
+        queue.push(spouseId);
       }
     }
   }

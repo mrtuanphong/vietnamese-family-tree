@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { clanApi, personsApi } from "@/lib/api";
+import BottomTabBar from "@/components/ui/BottomTabBar";
 import { getAvatarUrl } from "@/lib/avatar";
 import type { Clan, Person } from "@/types";
 
@@ -53,10 +54,15 @@ export default function ClanPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await clanApi.upsert(form);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      await clanApi.upsert(form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      alert("Lỗi khi lưu: " + String(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const superAdmin = persons.find((p) => p.id === form.superAdminId);
@@ -65,12 +71,12 @@ export default function ClanPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-6 py-4 flex items-center gap-4">
-        <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← Quay lại</Link>
-        <h1 className="text-xl font-bold">Thông tin dòng họ</h1>
+      <header className="bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-4">
+        <Link href="/" className="hidden sm:block text-sm text-gray-500 hover:text-gray-700">← Quay lại</Link>
+        <h1 className="text-base sm:text-xl font-bold">Thông tin dòng họ</h1>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-2xl mx-auto px-4 py-8 pb-24 sm:pb-8">
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border p-6 flex flex-col gap-5">
           <div>
             <label className="text-sm font-medium">Tên dòng họ *</label>
@@ -221,6 +227,7 @@ export default function ClanPage() {
           </div>
         </form>
       </main>
+      <BottomTabBar />
     </div>
   );
 }

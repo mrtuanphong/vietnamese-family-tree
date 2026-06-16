@@ -23,6 +23,8 @@ export interface Person {
   phone?: string | null;
   photoUrl?: string | null;
   bio?: string | null;
+  generation?: number | null;
+  createdAt?: string;
 }
 
 export interface Relationship {
