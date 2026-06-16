@@ -1,6 +1,12 @@
-import type { Person, Relationship, Marriage } from "@/types";
+import type { Clan, Person, Relationship, Marriage } from "@/types";
 
 const base = "/api";
+
+export const clanApi = {
+  get: (): Promise<Clan | null> => fetch(`${base}/clan`).then((r) => r.json()),
+  upsert: (data: Omit<Clan, "id">): Promise<Clan> =>
+    fetch(`${base}/clan`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+};
 
 export const personsApi = {
   getAll: (): Promise<Person[]> => fetch(`${base}/persons`).then((r) => r.json()),

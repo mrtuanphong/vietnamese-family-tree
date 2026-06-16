@@ -20,13 +20,19 @@ function yearOf(dateStr?: string | null) {
 
 export default function PeoplePage() {
   const [persons, setPersons] = useState<Person[]>([]);
+  const [clanName, setClanName] = useState<string>("Gia Phả Việt Nam");
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [editTarget, setEditTarget] = useState<Person | null>(null);
 
   const load = () => personsApi.getAll().then(setPersons);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    import("@/lib/api").then(({ clanApi }) =>
+      clanApi.get().then((c) => { if (c?.name) setClanName(c.name); })
+    );
+  }, []);
 
   const filtered = persons.filter((p) =>
     fullName(p).toLowerCase().includes(search.toLowerCase())
@@ -54,7 +60,12 @@ export default function PeoplePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Gia Phả Việt Nam</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold">{clanName}</h1>
+          <Link href="/clan" className="text-xs text-gray-400 hover:text-gray-600 border rounded px-2 py-0.5">
+            Cài đặt
+          </Link>
+        </div>
         <Link href="/tree" className="text-sm px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">
           Xem cây gia phả →
         </Link>
@@ -133,7 +144,11 @@ export default function PeoplePage() {
 
       {showAdd && (
         <Modal title="Thêm người" onClose={() => setShowAdd(false)}>
-          <PersonForm onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
+          <PersonForm
+            defaultLastName={persons[persons.length - 1]?.lastName}
+            onSubmit={handleAdd}
+            onCancel={() => setShowAdd(false)}
+          />
         </Modal>
       )}
 

@@ -7,25 +7,28 @@ type PersonFormData = Omit<Person, "id">;
 
 interface PersonFormProps {
   initial?: Partial<Person>;
+  defaultLastName?: string;
   onSubmit: (data: PersonFormData) => Promise<void>;
   onCancel: () => void;
 }
 
-const emptyForm: PersonFormData = {
-  firstName: "",
-  lastName: "",
-  middleName: "",
-  gender: "unknown",
-  birthDate: "",
-  birthPlace: "",
-  deathDate: "",
-  deathPlace: "",
-  photoUrl: "",
-  bio: "",
-};
+function makeEmpty(defaultLastName?: string): PersonFormData {
+  return {
+    firstName: "",
+    lastName: defaultLastName ?? "",
+    middleName: "",
+    gender: "unknown",
+    birthDate: "",
+    birthPlace: "",
+    deathDate: "",
+    deathPlace: "",
+    photoUrl: "",
+    bio: "",
+  };
+}
 
-export default function PersonForm({ initial, onSubmit, onCancel }: PersonFormProps) {
-  const [form, setForm] = useState<PersonFormData>({ ...emptyForm, ...initial });
+export default function PersonForm({ initial, defaultLastName, onSubmit, onCancel }: PersonFormProps) {
+  const [form, setForm] = useState<PersonFormData>({ ...makeEmpty(defaultLastName), ...initial });
   const [loading, setLoading] = useState(false);
 
   const set = (field: keyof PersonFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -43,20 +46,19 @@ export default function PersonForm({ initial, onSubmit, onCancel }: PersonFormPr
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="text-sm font-medium">Họ *</label>
           <input required value={form.lastName} onChange={set("lastName")} className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="Nguyễn" />
         </div>
         <div>
-          <label className="text-sm font-medium">Tên *</label>
-          <input required value={form.firstName} onChange={set("firstName")} className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="Văn A" />
+          <label className="text-sm font-medium">Đệm</label>
+          <input value={form.middleName ?? ""} onChange={set("middleName")} className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="Văn" />
         </div>
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Tên đệm</label>
-        <input value={form.middleName ?? ""} onChange={set("middleName")} className="mt-1 w-full border rounded px-3 py-2 text-sm" />
+        <div>
+          <label className="text-sm font-medium">Tên *</label>
+          <input required value={form.firstName} onChange={set("firstName")} className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="An" />
+        </div>
       </div>
 
       <div>

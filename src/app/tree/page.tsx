@@ -148,7 +148,11 @@ export default function TreePage() {
 
       {showAdd && (
         <Modal title="Thêm người" onClose={() => setShowAdd(false)}>
-          <PersonForm onSubmit={handleAddPerson} onCancel={() => setShowAdd(false)} />
+          <PersonForm
+            defaultLastName={persons[persons.length - 1]?.lastName}
+            onSubmit={handleAddPerson}
+            onCancel={() => setShowAdd(false)}
+          />
         </Modal>
       )}
 

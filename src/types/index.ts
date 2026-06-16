@@ -1,3 +1,11 @@
+export interface Clan {
+  id: string;
+  name: string;
+  address?: string | null;
+  description?: string | null;
+  enabled: boolean;
+}
+
 export type Gender = "male" | "female" | "unknown";
 
 export interface Person {
