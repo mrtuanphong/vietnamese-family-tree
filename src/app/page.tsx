@@ -25,6 +25,7 @@ export default function PeoplePage() {
   const [superAdminId, setSuperAdminId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "generation" | "name">("recent");
+  const [genFilter, setGenFilter] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [editTarget, setEditTarget] = useState<Person | null>(null);
 
@@ -40,8 +41,13 @@ export default function PeoplePage() {
 
   const hasGenerations = persons.some((p) => p.generation != null);
 
+  const generations = Array.from(
+    new Set(persons.map((p) => p.generation).filter((g): g is number => g != null))
+  ).sort((a, b) => a - b);
+
   const filtered = persons
     .filter((p) => fullName(p).toLowerCase().includes(search.toLowerCase()))
+    .filter((p) => genFilter === null || p.generation === genFilter)
     .sort((a, b) => {
       if (sortBy === "recent") {
         return (b.createdAt ?? "") > (a.createdAt ?? "") ? 1 : -1;
@@ -90,32 +96,69 @@ export default function PeoplePage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 sm:pb-6">
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-3">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo tên..."
             className="border rounded px-3 py-2 text-sm flex-1 min-w-0"
           />
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-xs text-gray-400 whitespace-nowrap">Xếp theo</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="border rounded px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="recent">Mới thêm</option>
-              <option value="generation">Đời</option>
-              <option value="name">Tên</option>
-            </select>
-          </div>
           <button
             onClick={() => setShowAdd(true)}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap"
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap shrink-0"
           >
             + Thêm người
           </button>
         </div>
+
+        {generations.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-4">
+            <button
+              onClick={() => setGenFilter(null)}
+              className={`px-3 py-1 text-xs rounded-full border transition-colors ${genFilter === null ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"}`}
+            >
+              Tất cả
+            </button>
+            {generations.map((g) => (
+              <button
+                key={g}
+                onClick={() => setGenFilter(g)}
+                className={`px-3 py-1 text-xs rounded-full border transition-colors ${genFilter === g ? "bg-amber-500 text-white border-amber-500" : "bg-white text-gray-600 border-gray-300 hover:border-amber-400"}`}
+              >
+                Đời {g}
+              </button>
+            ))}
+            <div className="ml-auto flex items-center gap-1.5 shrink-0">
+              <span className="text-xs text-gray-400 whitespace-nowrap">Xếp theo</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="recent">Mới thêm</option>
+                <option value="generation">Đời</option>
+                <option value="name">Tên</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {generations.length === 0 && (
+          <div className="flex justify-end mb-4">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400 whitespace-nowrap">Xếp theo</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="recent">Mới thêm</option>
+                <option value="generation">Đời</option>
+                <option value="name">Tên</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-lg border overflow-hidden">
           <table className="w-full text-sm">
@@ -151,8 +194,8 @@ export default function PeoplePage() {
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span className="font-medium">{fullName(p)}</span>
                           {p.id === superAdminId && (
-                            <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">
-                              Super Admin
+                            <span title="Tài khoản Super Admin" className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">
+                              SA
                             </span>
                           )}
                         </div>

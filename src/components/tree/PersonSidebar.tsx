@@ -115,19 +115,21 @@ export default function PersonSidebar({
 
       <div className="p-4 flex flex-col items-center gap-2 border-b">
         <Image src={getAvatarUrl(person.gender)} alt="" width={72} height={72} className="rounded-full" />
-        <p className="font-bold text-center">{fullName(person)}</p>
-        <div className="flex items-center gap-1.5 flex-wrap justify-center">
+        <div className="flex items-center justify-center gap-1.5">
+          <p className="font-bold text-center">{fullName(person)}</p>
           {isSuperAdmin && (
-            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-              Super Admin
-            </span>
-          )}
-          {person.generation != null && (
-            <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
-              Đời {person.generation}
+            <span title="Tài khoản Super Admin" className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium shrink-0">
+              SA
             </span>
           )}
         </div>
+        {person.generation != null && (
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+            <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+              Đời {person.generation}
+            </span>
+          </div>
+        )}
         <p className="text-xs text-gray-500">
           {person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Không rõ"}
         </p>

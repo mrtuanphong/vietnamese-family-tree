@@ -55,7 +55,8 @@ export default function TreePage() {
     return { p, r, m };
   };
 
-  const rebuild = (data: FamilyTreeData, selectPerson?: Person | null) => {
+  const rebuild = (data: FamilyTreeData, selectPerson?: Person | null, adminId?: string | null) => {
+    const effectiveAdminId = adminId !== undefined ? adminId : superAdminId;
     const { nodes: n, edges: e } = buildTreeGraph(data);
     const selectedId = selectPerson?.id ?? null;
     const withHandlers = n.map((node) => ({
@@ -63,8 +64,9 @@ export default function TreePage() {
       data: {
         ...node.data,
         isSelected: node.id === selectedId,
-        isSuperAdmin: node.id === superAdminId,
+        isSuperAdmin: node.id === effectiveAdminId,
         onSelect: (person: Person) => setSelected(person),
+        onAddChild: (personId: string) => setPendingRelation({ type: "child", anchorId: personId }),
       },
     }));
     setNodes(withHandlers);
@@ -78,12 +80,13 @@ export default function TreePage() {
   const [initialLoaded, setInitialLoaded] = useState(false);
 
   useEffect(() => {
-    load().then(({ p, r, m }) => {
+    Promise.all([load(), clanApi.get()]).then(([{ p, r, m }, clan]) => {
+      const adminId = clan?.superAdminId ?? null;
+      if (adminId) setSuperAdminId(adminId);
       const preselect = urlSelectedId ? p.find((x) => x.id === urlSelectedId) ?? null : null;
-      rebuild({ persons: p, relationships: r, marriages: m }, preselect);
+      rebuild({ persons: p, relationships: r, marriages: m }, preselect, adminId);
       setInitialLoaded(true);
     });
-    clanApi.get().then((c) => { if (c?.superAdminId) setSuperAdminId(c.superAdminId); });
   }, []);
 
   useEffect(() => {
@@ -222,6 +225,8 @@ export default function TreePage() {
             nodeTypes={nodeTypes}
             fitView={!urlSelectedId}
             onInit={setRfInstance}
+            nodesDraggable={false}
+            nodesConnectable={false}
           >
             <Background />
             <Controls />

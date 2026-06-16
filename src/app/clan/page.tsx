@@ -153,7 +153,7 @@ export default function ClanPage() {
                 />
                 <div>
                   <p className="text-sm font-medium">{fullName(superAdmin)}</p>
-                  <p className="text-xs text-blue-500">Super Admin</p>
+                  <p className="text-xs text-blue-500">Tài khoản Super Admin</p>
                 </div>
                 <button
                   type="button"

@@ -1,62 +1,118 @@
+import dagre from "dagre";
 import type { Node, Edge } from "reactflow";
-import type { FamilyTreeData, Person } from "@/types";
+import type { FamilyTreeData } from "@/types";
 
 const NODE_W = 144;
 const NODE_H = 110;
 const H_GAP = 60;
-const V_GAP = 100;
+const V_GAP = 80;
+const ROW_TOLERANCE = 5;
+
+function rowKey(y: number): number {
+  return Math.round(y);
+}
+
+// Group positions by y-row (within ROW_TOLERANCE), return map of rowY -> sorted ids
+function groupByRow(positions: Map<string, { x: number; y: number }>): Map<number, string[]> {
+  const rows = new Map<number, string[]>();
+  for (const [id, pos] of positions) {
+    let matched: number | null = null;
+    for (const ry of rows.keys()) {
+      if (Math.abs(ry - pos.y) <= ROW_TOLERANCE) { matched = ry; break; }
+    }
+    const key = matched ?? rowKey(pos.y);
+    if (!rows.has(key)) rows.set(key, []);
+    rows.get(key)!.push(id);
+  }
+  return rows;
+}
+
+// Push nodes right within each row to eliminate overlaps
+function resolveOverlaps(positions: Map<string, { x: number; y: number }>): void {
+  const rows = groupByRow(positions);
+  for (const ids of rows.values()) {
+    if (ids.length <= 1) continue;
+    ids.sort((a, b) => positions.get(a)!.x - positions.get(b)!.x);
+    for (let i = 1; i < ids.length; i++) {
+      const prev = positions.get(ids[i - 1])!;
+      const curr = positions.get(ids[i])!;
+      const minX = prev.x + NODE_W + H_GAP;
+      if (curr.x < minX) curr.x = minX;
+    }
+  }
+}
+
+// Find an x slot next to targetX on the given row that doesn't overlap existing nodes
+function findFreeX(
+  targetX: number,
+  rowIds: string[],
+  positions: Map<string, { x: number; y: number }>,
+  excludeId: string,
+): number {
+  const occupied = rowIds
+    .filter((id) => id !== excludeId)
+    .map((id) => positions.get(id)!.x)
+    .sort((a, b) => a - b);
+
+  // Try right of partner first, then left
+  const candidates = [targetX + NODE_W + H_GAP, targetX - NODE_W - H_GAP];
+  for (const cx of candidates) {
+    const overlap = occupied.some((ox) => Math.abs(ox - cx) < NODE_W + H_GAP);
+    if (!overlap) return cx;
+  }
+  // Fallback: place right of partner, resolveOverlaps will fix it
+  return targetX + NODE_W + H_GAP;
+}
 
 export function buildTreeGraph(data: FamilyTreeData): { nodes: Node[]; edges: Edge[] } {
   const { persons, relationships, marriages } = data;
-  const personMap = new Map(persons.map((p) => [p.id, p]));
 
-  // Build child → parents map
-  const parentOf = new Map<string, string[]>();
-  const childrenOf = new Map<string, string[]>();
-  for (const rel of relationships) {
-    if (!parentOf.has(rel.childId)) parentOf.set(rel.childId, []);
-    parentOf.get(rel.childId)!.push(rel.parentId);
-    if (!childrenOf.has(rel.parentId)) childrenOf.set(rel.parentId, []);
-    childrenOf.get(rel.parentId)!.push(rel.childId);
-  }
+  const g = new dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: "TB", nodesep: H_GAP, ranksep: V_GAP, marginx: 50, marginy: 50 });
 
-  // Assign generations
-  const generation = new Map<string, number>();
-  const visited = new Set<string>();
+  for (const p of persons) g.setNode(p.id, { width: NODE_W, height: NODE_H });
+  for (const rel of relationships) g.setEdge(rel.parentId, rel.childId);
 
-  function assignGen(id: string, gen: number) {
-    if (visited.has(id)) return;
-    visited.add(id);
-    const existing = generation.get(id);
-    if (existing === undefined || gen > existing) generation.set(id, gen);
-    for (const childId of childrenOf.get(id) ?? []) assignGen(childId, gen + 1);
-  }
+  dagre.layout(g);
 
-  // Roots = persons with no parents
-  const roots = persons.filter((p) => !parentOf.has(p.id));
-  roots.forEach((p) => assignGen(p.id, 0));
-  // Assign remaining
-  persons.forEach((p) => { if (!generation.has(p.id)) generation.set(p.id, 0); });
-
-  // Group by generation
-  const byGen = new Map<number, Person[]>();
-  for (const p of persons) {
-    const g = generation.get(p.id) ?? 0;
-    if (!byGen.has(g)) byGen.set(g, []);
-    byGen.get(g)!.push(p);
-  }
-
-  // Position nodes
   const positions = new Map<string, { x: number; y: number }>();
-  for (const [gen, genPersons] of byGen.entries()) {
-    const totalWidth = genPersons.length * NODE_W + (genPersons.length - 1) * H_GAP;
-    genPersons.forEach((p, i) => {
-      positions.set(p.id, {
-        x: i * (NODE_W + H_GAP) - totalWidth / 2,
-        y: gen * (NODE_H + V_GAP),
-      });
-    });
+  for (const p of persons) {
+    const { x, y } = g.node(p.id);
+    positions.set(p.id, { x: x - NODE_W / 2, y: y - NODE_H / 2 });
   }
+
+  const hasParent = new Set(relationships.map((r) => r.childId));
+  const hasChild = new Set(relationships.map((r) => r.parentId));
+
+  // Align spouse y-rows and pick non-overlapping x slots
+  for (const m of marriages) {
+    const p1 = positions.get(m.spouse1Id);
+    const p2 = positions.get(m.spouse2Id);
+    if (!p1 || !p2) continue;
+
+    const s1Isolated = !hasParent.has(m.spouse1Id) && !hasChild.has(m.spouse1Id);
+    const s2Isolated = !hasParent.has(m.spouse2Id) && !hasChild.has(m.spouse2Id);
+
+    if (s2Isolated && !s1Isolated) {
+      p2.y = p1.y;
+      const rows = groupByRow(positions);
+      const rowIds = [...rows.entries()].find(([ry]) => Math.abs(ry - p1.y) <= ROW_TOLERANCE)?.[1] ?? [];
+      p2.x = findFreeX(p1.x, rowIds, positions, m.spouse2Id);
+    } else if (s1Isolated && !s2Isolated) {
+      p1.y = p2.y;
+      const rows = groupByRow(positions);
+      const rowIds = [...rows.entries()].find(([ry]) => Math.abs(ry - p2.y) <= ROW_TOLERANCE)?.[1] ?? [];
+      p1.x = findFreeX(p2.x, rowIds, positions, m.spouse1Id);
+    } else if (!s1Isolated && !s2Isolated && p1.y !== p2.y) {
+      const targetY = hasChild.has(m.spouse1Id) ? p1.y : hasChild.has(m.spouse2Id) ? p2.y : Math.max(p1.y, p2.y);
+      p1.y = targetY;
+      p2.y = targetY;
+    }
+  }
+
+  // Final pass: eliminate any remaining overlaps
+  resolveOverlaps(positions);
 
   const nodes: Node[] = persons.map((p) => ({
     id: p.id,
@@ -70,16 +126,25 @@ export function buildTreeGraph(data: FamilyTreeData): { nodes: Node[]; edges: Ed
       id: `rel-${rel.id}`,
       source: rel.parentId,
       target: rel.childId,
+      type: "smoothstep",
       style: { stroke: "#94a3b8" },
     })),
-    ...marriages.map((m) => ({
-      id: `mar-${m.id}`,
-      source: m.spouse1Id,
-      target: m.spouse2Id,
-      type: "straight",
-      style: { stroke: "#f472b6", strokeDasharray: "5,5" },
-      label: "♥",
-    })),
+    ...marriages.map((m) => {
+      const p1 = positions.get(m.spouse1Id);
+      const p2 = positions.get(m.spouse2Id);
+      const leftId = (p1 && p2 && p1.x <= p2.x) ? m.spouse1Id : m.spouse2Id;
+      const rightId = leftId === m.spouse1Id ? m.spouse2Id : m.spouse1Id;
+      return {
+        id: `mar-${m.id}`,
+        source: leftId,
+        target: rightId,
+        sourceHandle: "right",
+        targetHandle: "left",
+        type: "straight",
+        style: { stroke: "#f472b6", strokeDasharray: "5,5" },
+        label: "♥",
+      };
+    }),
   ];
 
   return { nodes, edges };
