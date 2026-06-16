@@ -138,8 +138,10 @@ export default function TreePage() {
       : "Thêm con mới"
     : "Thêm người";
 
-  const defaultLastName = pendingRelation
+  const defaultLastName = pendingRelation?.type === "child"
     ? persons.find((p) => p.id === pendingRelation.anchorId)?.lastName
+    : pendingRelation?.type === "spouse"
+    ? undefined
     : persons[persons.length - 1]?.lastName;
 
   const defaultGender = pendingRelation?.type === "spouse"
