@@ -27,6 +27,7 @@ model Person {
   birthPlace  String?
   deathDate   String?
   deathPlace  String?
+  phone       String?
   photoUrl    String?
   bio         String?
   createdAt   DateTime @default(now())

@@ -19,6 +19,7 @@ export interface Person {
   birthPlace?: string | null;
   deathDate?: string | null;
   deathPlace?: string | null;
+  phone?: string | null;
   photoUrl?: string | null;
   bio?: string | null;
 }

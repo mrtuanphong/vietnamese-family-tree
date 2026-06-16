@@ -17,11 +17,12 @@ function makeEmpty(defaultLastName?: string): PersonFormData {
     firstName: "",
     lastName: defaultLastName ?? "",
     middleName: "",
-    gender: "unknown",
+    gender: "male",
     birthDate: "",
     birthPlace: "",
     deathDate: "",
     deathPlace: "",
+    phone: "",
     photoUrl: "",
     bio: "",
   };
@@ -90,6 +91,11 @@ export default function PersonForm({ initial, defaultLastName, onSubmit, onCance
           <label className="text-sm font-medium">Nơi mất</label>
           <input value={form.deathPlace ?? ""} onChange={set("deathPlace")} className="mt-1 w-full border rounded px-3 py-2 text-sm" />
         </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium">Số điện thoại</label>
+        <input value={form.phone ?? ""} onChange={set("phone")} type="tel" className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="0912 345 678" />
       </div>
 
       <div>
