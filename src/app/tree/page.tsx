@@ -1,14 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   useNodesState,
   useEdgesState,
-  addEdge,
-  type Connection,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import Link from "next/link";
@@ -22,6 +20,8 @@ import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
 
 const nodeTypes = { personNode: PersonNode };
 
+type PendingRelation = { type: "spouse" | "child"; anchorId: string };
+
 export default function TreePage() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
@@ -31,6 +31,8 @@ export default function TreePage() {
   const [selected, setSelected] = useState<Person | null>(null);
   const [editTarget, setEditTarget] = useState<Person | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  // null = plain add, non-null = create-then-link
+  const [pendingRelation, setPendingRelation] = useState<PendingRelation | null>(null);
 
   const load = async () => {
     const [p, r, m] = await Promise.all([
@@ -67,7 +69,6 @@ export default function TreePage() {
     load().then(({ p, r, m }) => rebuild({ persons: p, relationships: r, marriages: m }));
   }, []);
 
-  // Sync isSelected on nodes when selected changes
   useEffect(() => {
     setNodes((prev) =>
       prev.map((node) => ({
@@ -82,10 +83,24 @@ export default function TreePage() {
     rebuild({ persons: p, relationships: r, marriages: m }, keepSelected);
   };
 
+  // Plain "add person" from header button
   const handleAddPerson = async (data: Omit<Person, "id">) => {
     await personsApi.create(data);
     setShowAdd(false);
     refresh();
+  };
+
+  // Create new person then immediately link as spouse or child
+  const handleCreateAndLink = async (data: Omit<Person, "id">) => {
+    if (!pendingRelation) return;
+    const newPerson = await personsApi.create(data);
+    if (pendingRelation.type === "spouse") {
+      await marriagesApi.create({ spouse1Id: pendingRelation.anchorId, spouse2Id: newPerson.id });
+    } else {
+      await relationshipsApi.create({ parentId: pendingRelation.anchorId, childId: newPerson.id });
+    }
+    setPendingRelation(null);
+    refresh(selected);
   };
 
   const handleEditPerson = async (data: Omit<Person, "id">) => {
@@ -96,7 +111,9 @@ export default function TreePage() {
   };
 
   const handleDeletePerson = async (id: string) => {
-    if (!confirm("Xoá người này?")) return;
+    const person = persons.find((p) => p.id === id);
+    const name = person ? [person.lastName, person.firstName].filter(Boolean).join(" ") : "người này";
+    if (!confirm(`Xoá "${name}" khỏi dòng họ?`)) return;
     await personsApi.delete(id);
     setSelected(null);
     refresh();
@@ -111,6 +128,20 @@ export default function TreePage() {
     await marriagesApi.create({ spouse1Id, spouse2Id });
     refresh(selected);
   };
+
+  const modalTitle = pendingRelation
+    ? pendingRelation.type === "spouse"
+      ? "Thêm vợ/chồng mới"
+      : "Thêm con mới"
+    : "Thêm người";
+
+  const defaultLastName = pendingRelation
+    ? persons.find((p) => p.id === pendingRelation.anchorId)?.lastName
+    : persons[persons.length - 1]?.lastName;
+
+  const defaultGender = pendingRelation?.type === "spouse"
+    ? (persons.find((p) => p.id === pendingRelation.anchorId)?.gender === "male" ? "female" : "male")
+    : undefined;
 
   return (
     <div className="flex flex-col h-screen">
@@ -154,10 +185,13 @@ export default function TreePage() {
             onDelete={handleDeletePerson}
             onAddChild={handleAddChild}
             onAddSpouse={handleAddSpouse}
+            onCreateAndAddSpouse={(anchorId) => setPendingRelation({ type: "spouse", anchorId })}
+            onCreateAndAddChild={(anchorId) => setPendingRelation({ type: "child", anchorId })}
           />
         )}
       </div>
 
+      {/* Plain add */}
       {showAdd && (
         <Modal title="Thêm người" onClose={() => setShowAdd(false)}>
           <PersonForm
@@ -168,9 +202,22 @@ export default function TreePage() {
         </Modal>
       )}
 
+      {/* Edit */}
       {editTarget && (
         <Modal title="Sửa thông tin" onClose={() => setEditTarget(null)}>
           <PersonForm initial={editTarget} onSubmit={handleEditPerson} onCancel={() => setEditTarget(null)} />
+        </Modal>
+      )}
+
+      {/* Create + link */}
+      {pendingRelation && (
+        <Modal title={modalTitle} onClose={() => setPendingRelation(null)}>
+          <PersonForm
+            defaultLastName={defaultLastName}
+            initial={defaultGender ? { gender: defaultGender } : undefined}
+            onSubmit={handleCreateAndLink}
+            onCancel={() => setPendingRelation(null)}
+          />
         </Modal>
       )}
     </div>

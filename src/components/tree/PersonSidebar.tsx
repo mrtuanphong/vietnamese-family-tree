@@ -4,6 +4,8 @@ import Image from "next/image";
 import { getAvatarUrl } from "@/lib/avatar";
 import type { Person, Relationship, Marriage } from "@/types";
 
+const NEW_PERSON_SENTINEL = "__new__";
+
 interface PersonSidebarProps {
   person: Person;
   allPersons: Person[];
@@ -14,6 +16,8 @@ interface PersonSidebarProps {
   onDelete: (id: string) => void;
   onAddChild: (parentId: string, childId: string) => void;
   onAddSpouse: (spouse1Id: string, spouse2Id: string) => void;
+  onCreateAndAddChild: (parentId: string) => void;
+  onCreateAndAddSpouse: (personId: string) => void;
 }
 
 function fullName(p: Person) {
@@ -30,6 +34,8 @@ export default function PersonSidebar({
   onDelete,
   onAddChild,
   onAddSpouse,
+  onCreateAndAddChild,
+  onCreateAndAddSpouse,
 }: PersonSidebarProps) {
   const personMap = new Map(allPersons.map((p) => [p.id, p]));
 
@@ -59,16 +65,20 @@ export default function PersonSidebar({
       !spouses.find((x) => x.id === p.id)
   );
 
-  const handleAddChild = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!e.target.value) return;
-    onAddChild(person.id, e.target.value);
+  const handleAddSpouse = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
     e.target.value = "";
+    if (!val) return;
+    if (val === NEW_PERSON_SENTINEL) { onCreateAndAddSpouse(person.id); return; }
+    onAddSpouse(person.id, val);
   };
 
-  const handleAddSpouse = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!e.target.value) return;
-    onAddSpouse(person.id, e.target.value);
+  const handleAddChild = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
     e.target.value = "";
+    if (!val) return;
+    if (val === NEW_PERSON_SENTINEL) { onCreateAndAddChild(person.id); return; }
+    onAddChild(person.id, val);
   };
 
   return (
@@ -117,6 +127,8 @@ export default function PersonSidebar({
         )}
         <select onChange={handleAddSpouse} className="mt-2 w-full border rounded px-2 py-1 text-xs">
           <option value="">+ Thêm vợ/chồng</option>
+          <option value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</option>
+          {unrelated.length > 0 && <option disabled>──────────────</option>}
           {unrelated.map((p) => <option key={p.id} value={p.id}>{fullName(p)}</option>)}
         </select>
       </div>
@@ -130,6 +142,8 @@ export default function PersonSidebar({
         )}
         <select onChange={handleAddChild} className="mt-2 w-full border rounded px-2 py-1 text-xs">
           <option value="">+ Thêm con</option>
+          <option value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</option>
+          {unrelated.length > 0 && <option disabled>──────────────</option>}
           {unrelated.map((p) => <option key={p.id} value={p.id}>{fullName(p)}</option>)}
         </select>
       </div>
