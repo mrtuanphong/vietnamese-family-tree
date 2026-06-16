@@ -13,7 +13,7 @@ interface PersonNodeData {
 
 export default function PersonNode({ data }: { data: PersonNodeData }) {
   const { person, isSelected, onSelect } = data;
-  const name = [person.lastName, person.firstName].filter(Boolean).join(" ");
+  const name = [person.lastName, person.middleName, person.firstName].filter(Boolean).join(" ");
   const years = [
     person.birthDate?.slice(0, 4),
     person.deathDate?.slice(0, 4),
