@@ -4,6 +4,7 @@ export interface Clan {
   address?: string | null;
   description?: string | null;
   enabled: boolean;
+  superAdminId?: string | null;
 }
 
 export type Gender = "male" | "female" | "unknown";

@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { clanApi } from "@/lib/api";
-import type { Clan } from "@/types";
+import Image from "next/image";
+import { clanApi, personsApi } from "@/lib/api";
+import { getAvatarUrl } from "@/lib/avatar";
+import type { Clan, Person } from "@/types";
 
 type ClanForm = Omit<Clan, "id">;
 
@@ -12,24 +14,39 @@ const defaultForm: ClanForm = {
   address: "",
   description: "",
   enabled: true,
+  superAdminId: null,
 };
+
+function fullName(p: Person) {
+  return [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ");
+}
 
 export default function ClanPage() {
   const [form, setForm] = useState<ClanForm>(defaultForm);
+  const [persons, setPersons] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    clanApi.get().then((clan) => {
-      if (clan) setForm({ name: clan.name, address: clan.address ?? "", description: clan.description ?? "", enabled: clan.enabled });
+    Promise.all([clanApi.get(), personsApi.getAll()]).then(([clan, ps]) => {
+      if (clan) {
+        setForm({
+          name: clan.name,
+          address: clan.address ?? "",
+          description: clan.description ?? "",
+          enabled: clan.enabled,
+          superAdminId: clan.superAdminId ?? null,
+        });
+      }
+      setPersons(ps);
       setLoading(false);
     });
   }, []);
 
   const set = (field: keyof ClanForm) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setForm((prev) => ({ ...prev, [field]: e.target.value || null }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +56,8 @@ export default function ClanPage() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
+
+  const superAdmin = persons.find((p) => p.id === form.superAdminId);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Đang tải...</div>;
 
@@ -85,13 +104,58 @@ export default function ClanPage() {
             <label className="text-sm font-medium">Mô tả</label>
             <textarea
               value={form.description ?? ""}
-              onChange={set("description")}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
               rows={4}
               placeholder="Mô tả về nguồn gốc, lịch sử dòng họ..."
               className="mt-1 w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
+          {/* Super Admin */}
+          <div className="border-t pt-5">
+            <label className="text-sm font-medium">Quản trị viên (Super Admin)</label>
+            <p className="text-xs text-gray-400 mt-0.5 mb-3">Chọn 1 người trong dòng họ làm quản trị viên workspace</p>
+
+            {persons.length === 0 ? (
+              <p className="text-sm text-gray-400 italic">Chưa có người nào trong danh sách. Thêm người trước.</p>
+            ) : (
+              <select
+                value={form.superAdminId ?? ""}
+                onChange={(e) => setForm((prev) => ({ ...prev, superAdminId: e.target.value || null }))}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">— Chưa chọn —</option>
+                {persons.map((p) => (
+                  <option key={p.id} value={p.id}>{fullName(p)}</option>
+                ))}
+              </select>
+            )}
+
+            {superAdmin && (
+              <div className="mt-3 flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                <Image
+                  src={getAvatarUrl(superAdmin.gender)}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                />
+                <div>
+                  <p className="text-sm font-medium">{fullName(superAdmin)}</p>
+                  <p className="text-xs text-blue-500">Super Admin</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, superAdminId: null }))}
+                  className="ml-auto text-xs text-gray-400 hover:text-red-500"
+                >
+                  Bỏ chọn
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Toggle */}
           <div className="flex items-center justify-between py-3 border-t">
             <div>
               <p className="text-sm font-medium">Kích hoạt workspace</p>
