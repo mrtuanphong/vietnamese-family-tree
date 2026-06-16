@@ -15,6 +15,7 @@ const defaultForm: ClanForm = {
   description: "",
   enabled: true,
   superAdminId: null,
+  superAdminGeneration: null,
 };
 
 function fullName(p: Person) {
@@ -37,6 +38,7 @@ export default function ClanPage() {
           description: clan.description ?? "",
           enabled: clan.enabled,
           superAdminId: clan.superAdminId ?? null,
+          superAdminGeneration: clan.superAdminGeneration ?? null,
         });
       }
       setPersons(ps);
@@ -149,11 +151,43 @@ export default function ClanPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, superAdminId: null }))}
+                  onClick={() => setForm((prev) => ({ ...prev, superAdminId: null, superAdminGeneration: null }))}
                   className="ml-auto text-xs text-gray-400 hover:text-red-500"
                 >
                   Bỏ chọn
                 </button>
+              </div>
+            )}
+
+            {superAdmin && (
+              <div className="mt-3">
+                <label className="text-sm font-medium">
+                  {fullName(superAdmin)} thuộc đời thứ
+                </label>
+                <p className="text-xs text-gray-400 mt-0.5 mb-2">
+                  Dùng làm tham chiếu tính đời cho toàn bộ dòng họ
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={form.superAdminGeneration ?? ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        superAdminGeneration: e.target.value ? parseInt(e.target.value) : null,
+                      }))
+                    }
+                    placeholder="VD: 5"
+                    className="w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-500">
+                    {form.superAdminGeneration
+                      ? `→ Đời ${form.superAdminGeneration}`
+                      : "Chưa nhập"}
+                  </span>
+                </div>
               </div>
             )}
           </div>

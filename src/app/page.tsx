@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { personsApi, clanApi } from "@/lib/api";
+import { personsApi, clanApi, relationshipsApi } from "@/lib/api";
 import { getAvatarUrl } from "@/lib/avatar";
+import { calcGenerations } from "@/lib/calcGenerations";
 import Modal from "@/components/ui/Modal";
 import PersonForm from "@/components/person/PersonForm";
-import type { Person } from "@/types";
+import type { Person, Relationship } from "@/types";
 
 function fullName(p: Person) {
   return [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ");
@@ -20,21 +21,34 @@ function yearOf(dateStr?: string | null) {
 
 export default function PeoplePage() {
   const [persons, setPersons] = useState<Person[]>([]);
+  const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [clanName, setClanName] = useState<string>("Gia Phả Việt Nam");
   const [superAdminId, setSuperAdminId] = useState<string | null>(null);
+  const [superAdminGeneration, setSuperAdminGeneration] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [editTarget, setEditTarget] = useState<Person | null>(null);
 
-  const load = () => personsApi.getAll().then(setPersons);
+  const load = () => Promise.all([
+    personsApi.getAll(),
+    relationshipsApi.getAll(),
+  ]).then(([ps, rels]) => {
+    setPersons(ps);
+    setRelationships(rels);
+  });
 
   useEffect(() => {
     load();
     clanApi.get().then((c) => {
       if (c?.name) setClanName(c.name);
       if (c?.superAdminId) setSuperAdminId(c.superAdminId);
+      if (c?.superAdminGeneration) setSuperAdminGeneration(c.superAdminGeneration);
     });
   }, []);
+
+  const generationMap = superAdminId && superAdminGeneration
+    ? calcGenerations(persons, relationships, superAdminId, superAdminGeneration)
+    : null;
 
   const filtered = persons.filter((p) =>
     fullName(p).toLowerCase().includes(search.toLowerCase())
@@ -97,6 +111,7 @@ export default function PeoplePage() {
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Họ tên</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Giới tính</th>
+                {generationMap && <th className="text-left px-4 py-3 font-medium text-gray-600">Đời</th>}
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Năm sinh</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Năm mất</th>
                 <th className="px-4 py-3"></th>
@@ -134,6 +149,11 @@ export default function PeoplePage() {
                   <td className="px-4 py-3 text-gray-600">
                     {p.gender === "male" ? "Nam" : p.gender === "female" ? "Nữ" : "Không rõ"}
                   </td>
+                  {generationMap && (
+                    <td className="px-4 py-3 text-gray-600">
+                      {generationMap.has(p.id) ? `Đời ${generationMap.get(p.id)}` : "—"}
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-gray-600">{yearOf(p.birthDate) || "—"}</td>
                   <td className="px-4 py-3 text-gray-600">{yearOf(p.deathDate) || "—"}</td>
                   <td className="px-4 py-3">
