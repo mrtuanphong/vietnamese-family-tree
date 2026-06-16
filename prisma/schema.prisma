@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Person {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  middleName  String?
+  gender      String   // "male" | "female" | "unknown"
+  birthDate   String?
+  birthPlace  String?
+  deathDate   String?
+  deathPlace  String?
+  photoUrl    String?
+  bio         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships where this person is parent
+  asParent    Relationship[] @relation("Parent")
+  // Relationships where this person is child
+  asChild     Relationship[] @relation("Child")
+  // Marriages where this person is spouse1
+  asSpouse1   Marriage[]     @relation("Spouse1")
+  // Marriages where this person is spouse2
+  asSpouse2   Marriage[]     @relation("Spouse2")
+}
+
+model Relationship {
+  id       String @id @default(cuid())
+  parentId String
+  childId  String
+  parent   Person @relation("Parent", fields: [parentId], references: [id])
+  child    Person @relation("Child", fields: [childId], references: [id])
+
+  @@unique([parentId, childId])
+}
+
+model Marriage {
+  id        String  @id @default(cuid())
+  spouse1Id String
+  spouse2Id String
+  startDate String?
+  endDate   String?
+  spouse1   Person  @relation("Spouse1", fields: [spouse1Id], references: [id])
+  spouse2   Person  @relation("Spouse2", fields: [spouse2Id], references: [id])
+
+  @@unique([spouse1Id, spouse2Id])
+}
