@@ -11,6 +11,7 @@ interface PersonSidebarProps {
   allPersons: Person[];
   relationships: Relationship[];
   marriages: Marriage[];
+  superAdminId: string | null;
   onClose: () => void;
   onEdit: (p: Person) => void;
   onDelete: (id: string) => void;
@@ -29,6 +30,7 @@ export default function PersonSidebar({
   allPersons,
   relationships,
   marriages,
+  superAdminId,
   onClose,
   onEdit,
   onDelete,
@@ -37,6 +39,7 @@ export default function PersonSidebar({
   onCreateAndAddChild,
   onCreateAndAddSpouse,
 }: PersonSidebarProps) {
+  const isSuperAdmin = person.id === superAdminId;
   const personMap = new Map(allPersons.map((p) => [p.id, p]));
 
   const parents = relationships
@@ -91,6 +94,11 @@ export default function PersonSidebar({
       <div className="p-4 flex flex-col items-center gap-2 border-b">
         <Image src={getAvatarUrl(person.gender)} alt="" width={72} height={72} className="rounded-full" />
         <p className="font-bold text-center">{fullName(person)}</p>
+        {isSuperAdmin && (
+          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+            Super Admin
+          </span>
+        )}
         <p className="text-xs text-gray-500">
           {person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Không rõ"}
         </p>
@@ -152,9 +160,11 @@ export default function PersonSidebar({
         <button onClick={() => onEdit(person)} className="flex-1 text-xs px-3 py-2 border rounded hover:bg-gray-50">
           Sửa
         </button>
-        <button onClick={() => onDelete(person.id)} className="text-xs px-3 py-2 border border-red-200 text-red-600 rounded hover:bg-red-50">
-          Xoá
-        </button>
+        {!isSuperAdmin && (
+          <button onClick={() => onDelete(person.id)} className="text-xs px-3 py-2 border border-red-200 text-red-600 rounded hover:bg-red-50">
+            Xoá
+          </button>
+        )}
       </div>
     </div>
   );

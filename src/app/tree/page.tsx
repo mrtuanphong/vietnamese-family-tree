@@ -16,6 +16,7 @@ import PersonNode from "@/components/tree/PersonNode";
 import PersonSidebar from "@/components/tree/PersonSidebar";
 import Modal from "@/components/ui/Modal";
 import PersonForm from "@/components/person/PersonForm";
+import { clanApi } from "@/lib/api";
 import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
 
 const nodeTypes = { personNode: PersonNode };
@@ -31,6 +32,7 @@ export default function TreePage() {
   const [selected, setSelected] = useState<Person | null>(null);
   const [editTarget, setEditTarget] = useState<Person | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [superAdminId, setSuperAdminId] = useState<string | null>(null);
   // null = plain add, non-null = create-then-link
   const [pendingRelation, setPendingRelation] = useState<PendingRelation | null>(null);
 
@@ -67,6 +69,7 @@ export default function TreePage() {
 
   useEffect(() => {
     load().then(({ p, r, m }) => rebuild({ persons: p, relationships: r, marriages: m }));
+    clanApi.get().then((c) => { if (c?.superAdminId) setSuperAdminId(c.superAdminId); });
   }, []);
 
   useEffect(() => {
@@ -180,6 +183,7 @@ export default function TreePage() {
             allPersons={persons}
             relationships={relationships}
             marriages={marriages}
+            superAdminId={superAdminId}
             onClose={() => setSelected(null)}
             onEdit={(p) => setEditTarget(p)}
             onDelete={handleDeletePerson}
