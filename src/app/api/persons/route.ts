@@ -12,8 +12,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const person = await prisma.person.create({ data: body });
+    const { id: _id, createdAt: _ca, updatedAt: _ua, ...data } = await req.json();
+    const person = await prisma.person.create({ data });
     return NextResponse.json(person, { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

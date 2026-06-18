@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import ReactFlow, {
   Background,
@@ -16,8 +16,7 @@ import { personsApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { buildTreeGraph } from "@/lib/buildTree";
 import PersonNode from "@/components/tree/PersonNode";
 import PersonSidebar from "@/components/tree/PersonSidebar";
-import Modal from "@/components/ui/Modal";
-import PersonForm from "@/components/person/PersonForm";
+import PersonDialog from "@/components/person/PersonDialog";
 import { clanApi } from "@/lib/api";
 import BottomTabBar from "@/components/ui/BottomTabBar";
 import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
@@ -26,7 +25,7 @@ const nodeTypes = { personNode: PersonNode };
 
 type PendingRelation = { type: "spouse" | "child" | "parent"; anchorId: string };
 
-export default function TreePage() {
+function TreePageContent() {
   const searchParams = useSearchParams();
   const urlSelectedId = searchParams.get("selected");
 
@@ -57,6 +56,7 @@ export default function TreePage() {
 
   const rebuild = (data: FamilyTreeData, selectPerson?: Person | null, adminId?: string | null) => {
     const effectiveAdminId = adminId !== undefined ? adminId : superAdminId;
+    const clanLN = data.persons.find((p) => p.id === effectiveAdminId)?.lastName ?? null;
     const { nodes: n, edges: e } = buildTreeGraph(data);
     const selectedId = selectPerson?.id ?? null;
     const withHandlers = n.map((node) => ({
@@ -65,6 +65,7 @@ export default function TreePage() {
         ...node.data,
         isSelected: node.id === selectedId,
         isSuperAdmin: node.id === effectiveAdminId,
+        clanLastName: clanLN,
         onSelect: (person: Person) => setSelected(person),
         onAddChild: (personId: string) => setPendingRelation({ type: "child", anchorId: personId }),
       },
@@ -117,7 +118,6 @@ export default function TreePage() {
   // Plain "add person" from header button
   const handleAddPerson = async (data: Omit<Person, "id">) => {
     await personsApi.create(data);
-    setShowAdd(false);
     refresh();
   };
 
@@ -144,7 +144,6 @@ export default function TreePage() {
   const handleEditPerson = async (data: Omit<Person, "id">) => {
     if (!editTarget) return;
     await personsApi.update(editTarget.id, data);
-    setEditTarget(null);
     refresh(editTarget);
   };
 
@@ -201,18 +200,10 @@ export default function TreePage() {
     : undefined;
 
   return (
-    <div className="flex flex-col h-screen">
-      <header className="bg-white border-b px-3 sm:px-6 py-3 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link href="/" className="hidden sm:block text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
-          <h1 className="text-base sm:text-lg font-bold">Cây Gia Phả</h1>
-        </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          + Thêm người
-        </button>
+    <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
+      <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center shrink-0">
+        <Link href="/" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700 mr-4">← Danh sách</Link>
+        <h1 className="text-xl font-semibold">Cây gia phả</h1>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -248,6 +239,7 @@ export default function TreePage() {
             relationships={relationships}
             marriages={marriages}
             superAdminId={superAdminId}
+            clanLastName={persons.find((p) => p.id === superAdminId)?.lastName ?? null}
             onClose={() => setSelected(null)}
             onEdit={(p) => setEditTarget(p)}
             onDelete={handleDeletePerson}
@@ -266,35 +258,38 @@ export default function TreePage() {
 
       <BottomTabBar />
 
-      {/* Plain add */}
-      {showAdd && (
-        <Modal title="Thêm người" onClose={() => setShowAdd(false)}>
-          <PersonForm
-            defaultLastName={persons[persons.length - 1]?.lastName}
-            onSubmit={handleAddPerson}
-            onCancel={() => setShowAdd(false)}
-          />
-        </Modal>
-      )}
+      <PersonDialog
+        open={showAdd}
+        onOpenChange={(open) => { if (!open) setShowAdd(false); }}
+        title="Thêm người"
+        defaultLastName={persons[persons.length - 1]?.lastName}
+        onSubmit={handleAddPerson}
+      />
 
-      {/* Edit */}
-      {editTarget && (
-        <Modal title="Sửa thông tin" onClose={() => setEditTarget(null)}>
-          <PersonForm initial={editTarget} onSubmit={handleEditPerson} onCancel={() => setEditTarget(null)} />
-        </Modal>
-      )}
+      <PersonDialog
+        open={!!editTarget}
+        onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+        title="Sửa thông tin"
+        initial={editTarget ?? undefined}
+        onSubmit={handleEditPerson}
+      />
 
-      {/* Create + link */}
-      {pendingRelation && (
-        <Modal title={modalTitle} onClose={() => setPendingRelation(null)}>
-          <PersonForm
-            defaultLastName={defaultLastName}
-            initial={defaultGender ? { gender: defaultGender } : undefined}
-            onSubmit={handleCreateAndLink}
-            onCancel={() => setPendingRelation(null)}
-          />
-        </Modal>
-      )}
+      <PersonDialog
+        open={!!pendingRelation}
+        onOpenChange={(open) => { if (!open) setPendingRelation(null); }}
+        title={modalTitle}
+        defaultLastName={defaultLastName}
+        initial={defaultGender ? { gender: defaultGender } : undefined}
+        onSubmit={handleCreateAndLink}
+      />
     </div>
+  );
+}
+
+export default function TreePage() {
+  return (
+    <Suspense>
+      <TreePageContent />
+    </Suspense>
   );
 }

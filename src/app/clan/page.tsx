@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { User } from "lucide-react";
 import { clanApi, personsApi } from "@/lib/api";
 import BottomTabBar from "@/components/ui/BottomTabBar";
-import { getAvatarUrl } from "@/lib/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type { Clan, Person } from "@/types";
 
 type ClanForm = Omit<Clan, "id">;
@@ -48,7 +53,7 @@ export default function ClanPage() {
   }, []);
 
   const set = (field: keyof ClanForm) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value || null }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,111 +75,102 @@ export default function ClanPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Đang tải...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-4">
-        <Link href="/" className="hidden sm:block text-sm text-gray-500 hover:text-gray-700">← Quay lại</Link>
-        <h1 className="text-base sm:text-xl font-bold">Thông tin dòng họ</h1>
+    <div className="min-h-screen bg-white">
+      <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center">
+        <h1 className="text-xl font-semibold">Thông tin dòng họ</h1>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8 pb-24 sm:pb-8">
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border p-6 flex flex-col gap-5">
+        <Card>
+        <form onSubmit={handleSubmit}>
+        <CardContent className="flex flex-col gap-5">
           <div>
-            <label className="text-sm font-medium">Tên dòng họ *</label>
-            <input
+            <label className="font-medium">Tên dòng họ *</label>
+            <Input
               required
               value={form.name}
               onChange={set("name")}
               placeholder="Họ Đỗ Quảng Tái"
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">Địa chỉ</label>
-            <input
+            <label className="font-medium">Địa chỉ</label>
+            <Input
               value={form.address ?? ""}
               onChange={set("address")}
               placeholder="Làng Quảng Tái, Xã Ứng Hòa, Thành phố Hà Nội"
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">Mô tả</label>
-            <textarea
+            <label className="font-medium">Mô tả</label>
+            <Textarea
               value={form.description ?? ""}
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
               rows={4}
               placeholder="Mô tả về nguồn gốc, lịch sử dòng họ..."
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 resize-none"
             />
-          </div>
-
-          {/* Cover placeholder */}
-          <div>
-            <label className="text-sm font-medium">Ảnh bìa</label>
-            <div className="mt-1 w-full max-w-xs aspect-[4/3] bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-dashed border-amber-200 rounded-xl flex flex-col items-center justify-center text-amber-400">
-              <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span className="text-sm">Ảnh bìa dòng họ</span>
-              <span className="text-xs mt-1 text-amber-300">(Tính năng upload ảnh sẽ có sau)</span>
-            </div>
           </div>
 
           {/* Super Admin */}
           <div className="border-t pt-5">
-            <label className="text-sm font-medium">Quản trị viên (Super Admin)</label>
+            <label className="font-medium">Quản trị viên (Super Admin)</label>
             <p className="text-xs text-gray-400 mt-0.5 mb-3">Chọn 1 người trong dòng họ làm quản trị viên workspace</p>
 
             {persons.length === 0 ? (
               <p className="text-sm text-gray-400 italic">Chưa có người nào trong danh sách. Thêm người trước.</p>
             ) : (
-              <select
-                value={form.superAdminId ?? ""}
-                onChange={(e) => setForm((prev) => ({ ...prev, superAdminId: e.target.value || null }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <Select
+                value={form.superAdminId ?? "none"}
+                onValueChange={(v) => setForm((prev) => ({ ...prev, superAdminId: v === "none" ? null : v }))}
               >
-                <option value="">— Chưa chọn —</option>
-                {persons.map((p) => (
-                  <option key={p.id} value={p.id}>{fullName(p)}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="— Chưa chọn —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Chưa chọn —</SelectItem>
+                  {persons.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{fullName(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
 
             {superAdmin && (
-              <div className="mt-3 flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                <Image
-                  src={getAvatarUrl(superAdmin.gender)}
-                  alt=""
-                  width={40}
-                  height={40}
-                  className="rounded-full"
-                />
+              <div className="mt-3 flex items-center gap-3 p-3 bg-brand-50 border border-brand-100 rounded-lg">
+                <span className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${superAdmin.gender === "female" ? "bg-pink-100 text-pink-400" : "bg-gray-100 text-gray-500"}`}>
+                  <User size={18} />
+                </span>
                 <div>
-                  <p className="text-sm font-medium">{fullName(superAdmin)}</p>
-                  <p className="text-xs text-blue-500">Tài khoản Super Admin</p>
+                  <p className="font-medium">{fullName(superAdmin)}</p>
+                  <p className="text-xs text-brand-500">Tài khoản Super Admin</p>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setForm((prev) => ({ ...prev, superAdminId: null, superAdminGeneration: null }))}
                   className="ml-auto text-xs text-gray-400 hover:text-red-500"
                 >
                   Bỏ chọn
-                </button>
+                </Button>
               </div>
             )}
 
             {superAdmin && (
               <div className="mt-3">
-                <label className="text-sm font-medium">
+                <label className="font-medium">
                   {fullName(superAdmin)} thuộc đời thứ
                 </label>
                 <p className="text-xs text-gray-400 mt-0.5 mb-2">
                   Dùng làm tham chiếu tính đời cho toàn bộ dòng họ
                 </p>
                 <div className="flex items-center gap-3">
-                  <input
+                  <Input
                     type="number"
                     min={1}
                     max={100}
@@ -186,7 +182,7 @@ export default function ClanPage() {
                       }))
                     }
                     placeholder="VD: 5"
-                    className="w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-24"
                   />
                   <span className="text-sm text-gray-500">
                     {form.superAdminGeneration
@@ -198,34 +194,25 @@ export default function ClanPage() {
             )}
           </div>
 
-          {/* Toggle */}
           <div className="flex items-center justify-between py-3 border-t">
             <div>
-              <p className="text-sm font-medium">Kích hoạt workspace</p>
+              <p className="font-medium">Kích hoạt workspace</p>
               <p className="text-xs text-gray-400 mt-0.5">Tắt để ẩn dòng họ này khỏi danh sách</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setForm((prev) => ({ ...prev, enabled: !prev.enabled }))}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.enabled ? "bg-blue-600" : "bg-gray-200"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.enabled ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
+            <Switch checked disabled />
           </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <span className={`text-sm transition-opacity ${saved ? "opacity-100 text-green-600" : "opacity-0"}`}>
-              ✓ Đã lưu
-            </span>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {saving ? "Đang lưu..." : "Lưu thông tin"}
-            </button>
-          </div>
+        </CardContent>
+        <CardFooter className="border-t justify-between">
+          <span className={`text-sm transition-opacity ${saved ? "opacity-100 text-green-600" : "opacity-0"}`}>
+            ✓ Đã lưu
+          </span>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Đang lưu..." : "Lưu thông tin"}
+          </Button>
+        </CardFooter>
         </form>
+        </Card>
       </main>
       <BottomTabBar />
     </div>

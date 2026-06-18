@@ -24,15 +24,15 @@ model Person {
   lastName    String
   middleName  String?
   gender      String   // "male" | "female" | "unknown"
-  birthDate   String?
-  birthPlace  String?
-  deathDate   String?
-  deathPlace  String?
-  phone       String?
-  photoUrl    String?
-  bio         String?
-  generation  Int?
-  createdAt   DateTime @default(now())
+  birthDate      String?
+  birthPlace     String?
+  deathDateLunar String?
+  deathPlace     String?
+  phone          String?
+  photoUrl       String?
+  bio            String?
+  generation     Int?
+  createdAt          DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relationships where this person is parent

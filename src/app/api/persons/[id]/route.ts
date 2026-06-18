@@ -11,8 +11,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = await req.json();
-    const person = await prisma.person.update({ where: { id }, data: body });
+    const { id: _id, createdAt: _ca, updatedAt: _ua, ...data } = await req.json();
+    const person = await prisma.person.update({ where: { id }, data });
     return NextResponse.json(person);
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

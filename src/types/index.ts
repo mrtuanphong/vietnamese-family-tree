@@ -18,7 +18,7 @@ export interface Person {
   gender: Gender;
   birthDate?: string | null;
   birthPlace?: string | null;
-  deathDate?: string | null;
+  deathDateLunar?: string | null;
   deathPlace?: string | null;
   phone?: string | null;
   photoUrl?: string | null;
