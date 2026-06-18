@@ -231,6 +231,7 @@ export default function PeoplePage() {
   const [genFilter, setGenFilter] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("people");
   const [editTarget, setEditTarget] = useState<Person | null>(null);
+  const [showAddPerson, setShowAddPerson] = useState(false);
 
   const load = () =>
     Promise.all([
@@ -250,6 +251,12 @@ export default function PeoplePage() {
       if (c?.superAdminId) setSuperAdminId(c.superAdminId);
     });
   }, []);
+
+  const handleAdd = async (data: Omit<Person, "id">) => {
+    await personsApi.create(data);
+    setShowAddPerson(false);
+    load();
+  };
 
   const handleEdit = async (data: Omit<Person, "id">) => {
     if (!editTarget) return;
@@ -380,8 +387,9 @@ export default function PeoplePage() {
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={100} className="text-center py-12 text-gray-500">
-                      Chưa có ai. Thêm người đầu tiên.
+                    <TableCell colSpan={100} className="text-center py-12">
+                      <p className="text-gray-500 mb-3">Chưa có ai. Thêm người đầu tiên.</p>
+                      <Button onClick={() => setShowAddPerson(true)}>+ Thêm người</Button>
                     </TableCell>
                   </TableRow>
                 )}
@@ -472,6 +480,12 @@ export default function PeoplePage() {
       </Tabs>
       </main>
 
+      <PersonDialog
+        open={showAddPerson}
+        onOpenChange={setShowAddPerson}
+        title="Thêm người"
+        onSubmit={handleAdd}
+      />
       <PersonDialog
         open={editTarget !== null}
         onOpenChange={(open) => { if (!open) setEditTarget(null); }}
