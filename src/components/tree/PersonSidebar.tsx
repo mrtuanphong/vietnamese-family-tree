@@ -11,9 +11,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Person, Relationship, Marriage } from "@/types";
 
 const NEW_PERSON_SENTINEL = "__new__";
+
+type PendingRemoval =
+  | { type: "parent"; relId: string; name: string }
+  | { type: "spouse"; marriageId: string; name: string }
+  | { type: "child"; relId: string; name: string };
 
 interface PersonSidebarProps {
   person: Person;
@@ -66,6 +81,7 @@ export default function PersonSidebar({
   const [addParentSel, setAddParentSel] = useState("");
   const [addSpouseSel, setAddSpouseSel] = useState("");
   const [addChildSel, setAddChildSel] = useState("");
+  const [pending, setPending] = useState<PendingRemoval | null>(null);
 
   useEffect(() => {
     setAddParentSel("");
@@ -95,13 +111,15 @@ export default function PersonSidebar({
       return p ? [{ marriageId: m.id, person: p }] : [];
     });
 
-  const unrelated = allPersons.filter(
-    (p) =>
-      p.id !== person.id &&
-      !parents.find((x) => x.person.id === p.id) &&
-      !children.find((x) => x.person.id === p.id) &&
-      !spouses.find((x) => x.person.id === p.id)
-  );
+  const unrelated = allPersons
+    .filter(
+      (p) =>
+        p.id !== person.id &&
+        !parents.find((x) => x.person.id === p.id) &&
+        !children.find((x) => x.person.id === p.id) &&
+        !spouses.find((x) => x.person.id === p.id)
+    )
+    .sort((a, b) => (a.firstName ?? "").localeCompare(b.firstName ?? "", "vi"));
 
   const handleAddParent = (val: string) => {
     setAddParentSel("");
@@ -124,148 +142,181 @@ export default function PersonSidebar({
     onAddChild(person.id, val);
   };
 
-  return (
-    <div className="fixed bottom-16 left-0 right-0 z-20 max-h-[65vh] rounded-t-2xl shadow-2xl sm:static sm:bottom-auto sm:w-72 sm:max-h-none sm:z-auto sm:rounded-none sm:shadow-none bg-white border-t sm:border-t-0 sm:border-l flex flex-col overflow-y-auto">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <span className="font-semibold text-sm">Chi tiết</span>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-gray-400 hover:text-gray-600">
-          <X size={16} />
-        </Button>
-      </div>
+  const confirmRemoval = () => {
+    if (!pending) return;
+    if (pending.type === "parent") onRemoveParent(pending.relId);
+    else if (pending.type === "spouse") onRemoveSpouse(pending.marriageId);
+    else if (pending.type === "child") onRemoveChild(pending.relId);
+    setPending(null);
+  };
 
-      <div className="p-4 flex flex-col items-center gap-2 border-b">
-        <span className={`w-[72px] h-[72px] rounded-full flex items-center justify-center shrink-0 ${
-          person.gender === "female" ? "bg-pink-100 text-pink-400"
-          : person.gender === "male" ? "bg-gray-100 text-gray-500"
-          : "bg-gray-100 text-gray-400"
-        }`}>
-          <User size={32} />
-        </span>
-        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-          <p className="font-bold text-center">{fullName(person)}</p>
-          {isSuperAdmin && (
-            <span title="Tài khoản Super Admin" className="text-xs px-1.5 py-0.5 bg-brand-100 text-brand-700 rounded-full font-medium shrink-0">
-              SA
-            </span>
+  const relationshipLabel = pending
+    ? pending.type === "parent" ? "cha/mẹ"
+    : pending.type === "spouse" ? "vợ/chồng"
+    : "con cái"
+    : "";
+
+  return (
+    <>
+      <AlertDialog open={!!pending} onOpenChange={(open) => { if (!open) setPending(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xoá quan hệ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Xoá quan hệ {relationshipLabel} với {pending?.name}? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemoval} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Xoá
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="fixed bottom-16 left-0 right-0 z-20 max-h-[65vh] rounded-t-2xl shadow-2xl sm:static sm:bottom-auto sm:w-72 sm:max-h-none sm:z-auto sm:rounded-none sm:shadow-none bg-white border-t sm:border-t-0 sm:border-l flex flex-col overflow-y-auto">
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <span className="font-semibold text-sm">Chi tiết</span>
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-gray-400 hover:text-gray-600">
+            <X size={16} />
+          </Button>
+        </div>
+
+        <div className="p-4 flex flex-col items-center gap-2 border-b">
+          <span className={`w-[72px] h-[72px] rounded-full flex items-center justify-center shrink-0 ${
+            person.gender === "female" ? "bg-pink-100 text-pink-400"
+            : person.gender === "male" ? "bg-gray-100 text-gray-500"
+            : "bg-gray-100 text-gray-400"
+          }`}>
+            <User size={32} />
+          </span>
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            <p className="font-bold text-center">{fullName(person)}</p>
+            {isSuperAdmin && (
+              <span title="Tài khoản Super Admin" className="text-xs px-1.5 py-0.5 bg-brand-100 text-brand-700 rounded-full font-medium shrink-0">
+                SA
+              </span>
+            )}
+            {clanLastName && person.lastName && person.lastName !== clanLastName && (
+              <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-medium shrink-0">
+                {person.gender === "female" ? "Dâu" : person.gender === "male" ? "Rể" : "Dâu/Rể"}
+              </span>
+            )}
+          </div>
+          {person.generation != null && (
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
+              <span className="text-xs px-2 py-0.5 bg-brand-100 text-brand-600 rounded-full font-medium">
+                Đời {person.generation}
+              </span>
+            </div>
           )}
-          {clanLastName && person.lastName && person.lastName !== clanLastName && (
-            <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-medium shrink-0">
-              {person.gender === "female" ? "Dâu" : person.gender === "male" ? "Rể" : "Dâu/Rể"}
-            </span>
+          <p className="text-xs text-gray-500">
+            {person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Không rõ"}
+          </p>
+          {person.birthDate && (
+            <p className="text-xs text-gray-500">
+              Sinh: {(() => { const [y, m, d] = person.birthDate.split("-"); return `${d ?? "—"}/${m ?? "—"}/${y === "0001" ? "?" : (y ?? "—")}`; })()} (Dương lịch)
+            </p>
           )}
         </div>
-        {person.generation != null && (
-          <div className="flex items-center gap-1.5 flex-wrap justify-center">
-            <span className="text-xs px-2 py-0.5 bg-brand-100 text-brand-600 rounded-full font-medium">
-              Đời {person.generation}
-            </span>
+
+        {person.bio && (
+          <div className="px-4 py-3 border-b">
+            <p className="text-xs text-gray-500 font-medium mb-1">Tiểu sử</p>
+            <p className="text-gray-700 leading-relaxed">{person.bio}</p>
           </div>
         )}
-        <p className="text-xs text-gray-500">
-          {person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Không rõ"}
-        </p>
-        {person.birthDate && (
-          <p className="text-xs text-gray-500">
-            Sinh: {person.birthDate.startsWith("0001") ? `?/${person.birthDate.slice(5).replace(/-/g, "/")}` : person.birthDate.slice(0, 10).replace(/-/g, "/")} (Dương lịch)
-          </p>
-        )}
-      </div>
 
-      {person.bio && (
         <div className="px-4 py-3 border-b">
-          <p className="text-xs text-gray-500 font-medium mb-1">Tiểu sử</p>
-          <p className="text-gray-700 leading-relaxed">{person.bio}</p>
+          <p className="text-xs text-gray-500 font-medium mb-2">Cha/Mẹ</p>
+          {parents.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
+            <ul className="space-y-1">
+              {parents.map(({ relId, person: p }) => (
+                <li key={relId} className="flex items-center justify-between gap-2">
+                  <span className="text-sm">{fullName(p)}</span>
+                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "parent", relId, name: fullName(p) })} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
+                    <X size={12} />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Select value={addParentSel} onValueChange={handleAddParent}>
+            <SelectTrigger size="sm" className="mt-2 w-full text-xs">
+              <SelectValue placeholder="+ Thêm cha/mẹ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</SelectItem>
+              {unrelated.length > 0 && <SelectSeparator />}
+              {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{p.firstName} - {fullName(p)}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
-      )}
 
-      <div className="px-4 py-3 border-b">
-        <p className="text-xs text-gray-500 font-medium mb-2">Cha/Mẹ</p>
-        {parents.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
-          <ul className="space-y-1">
-            {parents.map(({ relId, person: p }) => (
-              <li key={relId} className="flex items-center justify-between gap-2">
-                <span className="text-sm">{fullName(p)}</span>
-                <Button variant="ghost" size="icon" onClick={() => onRemoveParent(relId)} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
-                  <X size={12} />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <Select value={addParentSel} onValueChange={handleAddParent}>
-          <SelectTrigger size="sm" className="mt-2 w-full text-xs">
-            <SelectValue placeholder="+ Thêm cha/mẹ" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</SelectItem>
-            {unrelated.length > 0 && <SelectSeparator />}
-            {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{fullName(p)}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
+        <div className="px-4 py-3 border-b">
+          <p className="text-xs text-gray-500 font-medium mb-2">Vợ/Chồng</p>
+          {spouses.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
+            <ul className="space-y-1">
+              {spouses.map(({ marriageId, person: p }) => (
+                <li key={marriageId} className="flex items-center justify-between gap-2">
+                  <span className="text-sm">{fullName(p)}</span>
+                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "spouse", marriageId, name: fullName(p) })} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
+                    <X size={12} />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Select value={addSpouseSel} onValueChange={handleAddSpouse}>
+            <SelectTrigger size="sm" className="mt-2 w-full text-xs">
+              <SelectValue placeholder="+ Thêm vợ/chồng" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</SelectItem>
+              {unrelated.length > 0 && <SelectSeparator />}
+              {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{p.firstName} - {fullName(p)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="px-4 py-3 border-b">
-        <p className="text-xs text-gray-500 font-medium mb-2">Vợ/Chồng</p>
-        {spouses.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
-          <ul className="space-y-1">
-            {spouses.map(({ marriageId, person: p }) => (
-              <li key={marriageId} className="flex items-center justify-between gap-2">
-                <span className="text-sm">{fullName(p)}</span>
-                <Button variant="ghost" size="icon" onClick={() => onRemoveSpouse(marriageId)} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
-                  <X size={12} />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <Select value={addSpouseSel} onValueChange={handleAddSpouse}>
-          <SelectTrigger size="sm" className="mt-2 w-full text-xs">
-            <SelectValue placeholder="+ Thêm vợ/chồng" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</SelectItem>
-            {unrelated.length > 0 && <SelectSeparator />}
-            {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{fullName(p)}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
+        <div className="px-4 py-3 border-b">
+          <p className="text-xs text-gray-500 font-medium mb-2">Con cái</p>
+          {children.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
+            <ul className="space-y-1">
+              {children.map(({ relId, person: p }) => (
+                <li key={relId} className="flex items-center justify-between gap-2">
+                  <span className="text-sm">{fullName(p)}</span>
+                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "child", relId, name: fullName(p) })} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
+                    <X size={12} />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Select value={addChildSel} onValueChange={handleAddChild}>
+            <SelectTrigger size="sm" className="mt-2 w-full text-xs">
+              <SelectValue placeholder="+ Thêm con" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</SelectItem>
+              {unrelated.length > 0 && <SelectSeparator />}
+              {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{p.firstName} - {fullName(p)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="px-4 py-3 border-b">
-        <p className="text-xs text-gray-500 font-medium mb-2">Con cái</p>
-        {children.length === 0 ? <p className="text-xs text-gray-400">Chưa có</p> : (
-          <ul className="space-y-1">
-            {children.map(({ relId, person: p }) => (
-              <li key={relId} className="flex items-center justify-between gap-2">
-                <span className="text-sm">{fullName(p)}</span>
-                <Button variant="ghost" size="icon" onClick={() => onRemoveChild(relId)} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
-                  <X size={12} />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <Select value={addChildSel} onValueChange={handleAddChild}>
-          <SelectTrigger size="sm" className="mt-2 w-full text-xs">
-            <SelectValue placeholder="+ Thêm con" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NEW_PERSON_SENTINEL}>✦ Tạo người mới...</SelectItem>
-            {unrelated.length > 0 && <SelectSeparator />}
-            {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{fullName(p)}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="px-4 py-3 flex gap-2 mt-auto">
-        <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(person)}>
-          Sửa
-        </Button>
-        {!isSuperAdmin && (
-          <Button variant="destructive" size="sm" onClick={() => onDelete(person.id)}>
-            Xoá
+        <div className="px-4 py-3 flex gap-2 mt-auto">
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(person)}>
+            Sửa
           </Button>
-        )}
+          {!isSuperAdmin && (
+            <Button variant="destructive" size="sm" onClick={() => onDelete(person.id)}>
+              Xoá
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
