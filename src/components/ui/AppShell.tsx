@@ -97,7 +97,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           size="icon"
           onClick={() => setOpen(!open)}
           aria-label="Mở/đóng menu"
-          className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 shrink-0"
+          className="hidden md:inline-flex text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 shrink-0"
         >
           <Menu size={20} />
         </Button>
@@ -105,7 +105,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <span className="text-primary-foreground font-semibold text-lg flex-1 truncate min-w-0">{clanName}</span>
 
         {/* Right actions */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="flex items-center gap-1">
 
           {/* Add dropdown */}
           <DropdownMenu>

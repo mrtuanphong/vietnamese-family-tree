@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { User, Heart, Users } from "lucide-react";
+import { User, Heart, Users, TreePine, Pencil, Trash2 } from "lucide-react";
 import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import PersonDialog from "@/components/person/PersonDialog";
 import BottomTabBar from "@/components/ui/BottomTabBar";
@@ -292,10 +292,10 @@ export default function PeoplePage() {
 
       <main className="px-4 sm:px-6 py-6 pb-20 sm:pb-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="people">Người</TabsTrigger>
-          <TabsTrigger value="families">Gia đình</TabsTrigger>
-          <TabsTrigger value="events" disabled>Sự kiện</TabsTrigger>
+        <TabsList className="mb-4 w-full md:w-auto">
+          <TabsTrigger value="people" className="flex-1 md:flex-none">Người</TabsTrigger>
+          <TabsTrigger value="families" className="flex-1 md:flex-none">Gia đình</TabsTrigger>
+          <TabsTrigger value="events" disabled className="flex-1 md:flex-none">Sự kiện</TabsTrigger>
         </TabsList>
 
         {/* ── People tab ── */}
@@ -311,23 +311,25 @@ export default function PeoplePage() {
             </div>
 
             {generations.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-1.5 mb-4">
-                <button
-                  onClick={() => setGenFilter(null)}
-                  className={`px-3.5 py-1 text-[0.875rem] font-medium rounded-full border transition-colors ${genFilter === null ? "bg-brand-500 text-white border-brand-500" : "bg-white text-gray-600 border-border hover:border-gray-400"}`}
-                >
-                  Tất cả
-                </button>
-                {generations.map((g) => (
+              <div className="flex flex-col gap-2 mb-4">
+                <div className="flex overflow-x-auto gap-1.5 pb-1 scrollbar-none">
                   <button
-                    key={g}
-                    onClick={() => setGenFilter(g)}
-                    className={`px-3.5 py-1 text-[0.875rem] font-medium rounded-full border transition-colors ${genFilter === g ? "bg-brand-500 text-white border-brand-500" : "bg-white text-gray-600 border-border hover:border-gray-400"}`}
+                    onClick={() => setGenFilter(null)}
+                    className={`px-3.5 py-1 text-[0.875rem] font-medium rounded-full border transition-colors shrink-0 ${genFilter === null ? "bg-brand-500 text-white border-brand-500" : "bg-white text-gray-600 border-border hover:border-gray-400"}`}
                   >
-                    Đời {g}
+                    Tất cả
                   </button>
-                ))}
-                <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                  {generations.map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGenFilter(g)}
+                      className={`px-3.5 py-1 text-[0.875rem] font-medium rounded-full border transition-colors shrink-0 ${genFilter === g ? "bg-brand-500 text-white border-brand-500" : "bg-white text-gray-600 border-border hover:border-gray-400"}`}
+                    >
+                      Đời {g}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex justify-end items-center gap-1.5">
                   <span className="text-sm text-gray-600 whitespace-nowrap">Xếp theo</span>
                   <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
                     <SelectTrigger size="sm" className="w-40">
@@ -367,12 +369,12 @@ export default function PeoplePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-4 pr-2">Họ tên</TableHead>
+                  <TableHead className="pl-2 pr-2">Họ tên</TableHead>
                   <TableHead className="hidden sm:table-cell">Giới tính</TableHead>
                   {hasGenerations && <TableHead className="text-right hidden sm:table-cell">Đời</TableHead>}
                   <TableHead className="text-right hidden sm:table-cell">Ngày sinh</TableHead>
                   <TableHead className="text-right hidden sm:table-cell">Ngày mất (ÂL)</TableHead>
-                  <TableHead className="pl-2 pr-4"></TableHead>
+                  <TableHead className="pl-2 pr-2"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -385,7 +387,7 @@ export default function PeoplePage() {
                 )}
                 {filtered.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell className="pl-4 pr-2 py-3">
+                    <TableCell className="pl-2 pr-2 py-3">
                       <div className="flex items-center gap-3">
                         <span className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
                           p.gender === "female"
@@ -422,17 +424,17 @@ export default function PeoplePage() {
                     )}
                     <TableCell className="text-gray-600 text-right hidden sm:table-cell">{dateOf(p.birthDate)}</TableCell>
                     <TableCell className="text-gray-600 text-right hidden sm:table-cell">{dateOf(p.deathDateLunar)}</TableCell>
-                    <TableCell className="pl-2 pr-4 py-3">
+                    <TableCell className="pl-2 pr-2 py-3">
                       <div className="flex gap-1.5 justify-end">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/tree?selected=${p.id}`}>Xem cây</Link>
+                        <Button variant="outline" size="icon" asChild title="Xem cây">
+                          <Link href={`/tree?selected=${p.id}`}><TreePine size={16} /></Link>
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => setEditTarget(p)}>
-                          Sửa
+                        <Button variant="outline" size="icon" title="Sửa" onClick={() => setEditTarget(p)}>
+                          <Pencil size={16} />
                         </Button>
                         {p.id !== superAdminId && (
-                          <Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)}>
-                            Xoá
+                          <Button variant="destructive" size="icon" title="Xoá" onClick={() => handleDelete(p.id)}>
+                            <Trash2 size={16} />
                           </Button>
                         )}
                       </div>

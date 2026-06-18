@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type { Clan, Person } from "@/types";
 
 type ClanForm = Omit<Clan, "id">;
@@ -81,9 +80,8 @@ export default function ClanPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8 pb-24 sm:pb-8">
-        <Card>
         <form onSubmit={handleSubmit}>
-        <CardContent className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 sm:border sm:rounded-xl sm:p-6">
           <div>
             <label className="font-medium">Tên dòng họ *</label>
             <Input
@@ -202,17 +200,16 @@ export default function ClanPage() {
             <Switch checked disabled />
           </div>
 
-        </CardContent>
-        <CardFooter className="border-t justify-between">
-          <span className={`text-sm transition-opacity ${saved ? "opacity-100 text-green-600" : "opacity-0"}`}>
-            ✓ Đã lưu
-          </span>
-          <Button type="submit" disabled={saving}>
+        </div>
+        <div className="flex flex-col gap-2 border-t pt-4 mt-4 sm:mt-0 sm:border-t-0 sm:pt-0">
+          <Button type="submit" disabled={saving} className="w-full">
             {saving ? "Đang lưu..." : "Lưu thông tin"}
           </Button>
-        </CardFooter>
+          <span className={`text-sm text-center transition-opacity ${saved ? "opacity-100 text-green-600" : "opacity-0"}`}>
+            ✓ Đã lưu
+          </span>
+        </div>
         </form>
-        </Card>
       </main>
       <BottomTabBar />
     </div>

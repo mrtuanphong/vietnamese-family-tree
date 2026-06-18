@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 type PersonFormData = Omit<Person, "id">;
 
@@ -57,8 +58,11 @@ export default function PersonDialog({
         showCloseButton={false}
         className="flex flex-col p-0 gap-0 sm:max-w-lg max-h-[90vh]"
       >
-        <DialogHeader className="px-6 pt-5 pb-4 border-b shrink-0">
+        <DialogHeader className="px-6 pt-5 pb-4 border-b shrink-0 flex-row items-center justify-between">
           <DialogTitle>{title}</DialogTitle>
+          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="h-8 w-8 text-muted-foreground shrink-0">
+            <X size={16} />
+          </Button>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
@@ -79,21 +83,24 @@ export default function PersonDialog({
           />
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted rounded-b-xl">
-          <span className={`text-sm text-green-600 mr-auto transition-opacity duration-300 ${saved ? "opacity-100" : "opacity-0"}`}>
+        <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted rounded-b-xl flex-col gap-2">
+          <div className="flex gap-2 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className="flex-1"
+            >
+              Đóng
+            </Button>
+            <Button type="submit" form={formId} disabled={loading} className="flex-1">
+              {loading ? "Đang lưu..." : "Lưu"}
+            </Button>
+          </div>
+          <span className={`text-sm text-center text-green-600 transition-opacity duration-300 ${saved ? "opacity-100" : "opacity-0"}`}>
             ✓ Đã lưu
           </span>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-          >
-            Đóng
-          </Button>
-          <Button type="submit" form={formId} disabled={loading}>
-            {loading ? "Đang lưu..." : "Lưu"}
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
