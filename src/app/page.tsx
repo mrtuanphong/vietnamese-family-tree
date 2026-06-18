@@ -292,10 +292,10 @@ export default function PeoplePage() {
 
       <main className="px-4 sm:px-6 py-6 pb-20 sm:pb-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
-        <TabsList className="mb-4 w-full md:w-auto">
-          <TabsTrigger value="people" className="flex-1 md:flex-none">Người</TabsTrigger>
-          <TabsTrigger value="families" className="flex-1 md:flex-none">Gia đình</TabsTrigger>
-          <TabsTrigger value="events" disabled className="flex-1 md:flex-none">Sự kiện</TabsTrigger>
+        <TabsList className="mb-4 w-full sm:w-auto">
+          <TabsTrigger value="people" className="flex-1 sm:flex-none">Người</TabsTrigger>
+          <TabsTrigger value="families" className="flex-1 sm:flex-none">Gia đình</TabsTrigger>
+          <TabsTrigger value="events" disabled className="flex-1 sm:flex-none">Sự kiện</TabsTrigger>
         </TabsList>
 
         {/* ── People tab ── */}

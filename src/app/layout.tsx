@@ -18,7 +18,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Gia Phả Việt Nam",
-  description: "Ứng dụng quản lý gia phả",
+  description: "Ứng dụng quản lý gia phả dòng họ",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Gia Phả",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
