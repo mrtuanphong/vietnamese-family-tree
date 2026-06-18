@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { recalculateGenerations } from "@/lib/recalculateGenerations";
 import { NextRequest, NextResponse } from "next/server";
