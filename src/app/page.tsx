@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { User, Heart, Users, TreePine, Pencil, Trash2, Cake, Flame } from "lucide-react";
+import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame } from "lucide-react";
 import { Lunar } from "lunar-javascript";
 import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
@@ -321,7 +321,7 @@ export default function PeoplePage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "generation_asc" | "generation_desc" | "name_asc" | "name_desc">("recent");
   const [genFilter, setGenFilter] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>("people");
+  const [activeTab, setActiveTab] = useState<Tab>("events");
   const [editTarget, setEditTarget] = useState<Person | null>(null);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [eventFilter, setEventFilter] = useState<EventFilter>("all");
@@ -531,7 +531,7 @@ export default function PeoplePage() {
                     <TableCell className="pl-2 pr-2 py-3">
                       <div className="flex gap-1.5 justify-end">
                         <Button variant="outline" size="icon" asChild title="Xem cây">
-                          <Link href={`/tree?selected=${p.id}`}><TreePine size={16} /></Link>
+                          <Link href={`/tree?selected=${p.id}`}><Network size={16} /></Link>
                         </Button>
                         {canEdit && (
                           <Button variant="outline" size="icon" title="Sửa" onClick={() => setEditTarget(p)}>
