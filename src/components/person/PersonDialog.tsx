@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { toast } from "sonner";
 import type { Person } from "@/types";
 import { personsApi } from "@/lib/api";
 import PersonForm from "@/components/person/PersonForm";
@@ -35,7 +36,6 @@ export default function PersonDialog({
 }: PersonDialogProps) {
   const formId = useId();
   const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
@@ -74,8 +74,7 @@ export default function PersonDialog({
             placeSuggestions={placeSuggestions}
             onSubmit={async (data) => {
               await onSubmit(data);
-              setSaved(true);
-              setTimeout(() => setSaved(false), 2500);
+              toast.success("Đã lưu thành công");
             }}
             onCancel={() => onOpenChange(false)}
             onLoadingChange={setLoading}
@@ -83,7 +82,7 @@ export default function PersonDialog({
           />
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted rounded-b-xl flex-col gap-2">
+        <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted rounded-b-xl flex-col sm:flex-col gap-2">
           <div className="flex gap-2 w-full">
             <Button
               type="button"
@@ -92,15 +91,12 @@ export default function PersonDialog({
               disabled={loading}
               className="flex-1"
             >
-              Đóng
+              Bỏ qua
             </Button>
             <Button type="submit" form={formId} disabled={loading} className="flex-1">
               {loading ? "Đang lưu..." : "Lưu"}
             </Button>
           </div>
-          <span className={`text-sm text-center text-green-600 transition-opacity duration-300 ${saved ? "opacity-100" : "opacity-0"}`}>
-            ✓ Đã lưu
-          </span>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -7,10 +7,12 @@ import {
   Menu, Users, TreePine, Settings,
   Plus, UserPlus, CalendarDays,
   CircleUser, UserCog, Building2,
-  Search,
+  Search, LogOut, Lock,
 } from "lucide-react";
 import { clanApi, personsApi } from "@/lib/api";
+import { AccessContext } from "@/lib/AccessContext";
 import PersonDialog from "@/components/person/PersonDialog";
+import LoginGate from "@/components/ui/LoginGate";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,6 +37,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [clanName, setClanName] = useState("Gia Phả");
   const [showAddPerson, setShowAddPerson] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
+  const [accessGranted, setAccessGranted] = useState(false);
+  const [loggedInName, setLoggedInName] = useState("");
+  const [canEdit, setCanEdit] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -42,9 +48,32 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     clanApi.get().then((c) => {
       if (c?.name) setClanName(c.name);
     });
+    fetch("/api/access").then((r) => r.json()).then((d) => {
+      setIsPublic(d.public ?? true);
+      const granted = sessionStorage.getItem("giapha_access") === "granted";
+      setAccessGranted(granted);
+      if (granted) {
+        setLoggedInName(sessionStorage.getItem("giapha_name") ?? "");
+        setCanEdit(sessionStorage.getItem("giapha_can_edit") === "1");
+      }
+    });
   }, []);
 
   const desktopOpen = mounted && open;
+
+  if (mounted && !accessGranted) {
+    return (
+      <LoginGate
+        clanName={clanName}
+        isPublic={isPublic}
+        onGranted={(name, edit) => {
+          setAccessGranted(true);
+          setLoggedInName(name);
+          setCanEdit(edit);
+        }}
+      />
+    );
+  }
 
   return (
     <>
@@ -102,10 +131,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <Menu size={20} />
         </Button>
 
-        <span className="text-primary-foreground font-semibold text-lg flex-1 truncate min-w-0">{clanName}</span>
+        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+          <Link href="/" className="text-primary-foreground font-semibold text-lg hover:opacity-80 transition-opacity truncate">{clanName}</Link>
+          {!isPublic && <Lock size={14} className="text-primary-foreground/60 shrink-0" />}
+        </div>
 
         {/* Right actions */}
         <div className="flex items-center gap-1">
+
+          {canEdit && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-foreground/15 text-primary-foreground/80 shrink-0">
+              Super Admin
+            </span>
+          )}
 
           {/* Add dropdown */}
           <DropdownMenu>
@@ -120,13 +158,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem
-                onSelect={() => setShowAddPerson(true)}
-                className="gap-3 px-4 py-3 cursor-pointer"
-              >
-                <UserPlus size={18} className="text-gray-400" />
-                Thêm người
-              </DropdownMenuItem>
+              {canEdit && (
+                <DropdownMenuItem
+                  onSelect={() => setShowAddPerson(true)}
+                  className="gap-3 px-4 py-3 cursor-pointer"
+                >
+                  <UserPlus size={18} className="text-gray-400" />
+                  Thêm người
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem disabled className="gap-3 px-4 py-3">
                 <Users size={18} className="text-gray-300" />
                 Thêm gia đình
@@ -151,10 +191,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">
+              {loggedInName && (
+                <DropdownMenuItem disabled className="gap-3 px-4 py-3">
+                  <CircleUser size={18} className="text-gray-400" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium text-gray-800 truncate">{loggedInName}</span>
+                    <span className="text-xs text-gray-400">Đã đăng nhập</span>
+                  </div>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem disabled className="gap-3 px-4 py-3">
                 <UserCog size={18} className="text-gray-300" />
                 Thông tin cá nhân
               </DropdownMenuItem>
+              {loggedInName && (
+                <DropdownMenuItem
+                  className="gap-3 px-4 py-3 cursor-pointer text-red-600 focus:text-red-600"
+                  onSelect={() => {
+                    sessionStorage.removeItem("giapha_access");
+                    sessionStorage.removeItem("giapha_name");
+                    sessionStorage.removeItem("giapha_can_edit");
+                    setAccessGranted(false);
+                    setLoggedInName("");
+                    setCanEdit(false);
+                  }}
+                >
+                  <LogOut size={18} />
+                  Thoát
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -170,12 +235,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Content */}
-      <div
-        className="transition-all duration-200"
-        style={{ marginLeft: desktopOpen ? SIDEBAR_W : 0 }}
-      >
-        {children}
-      </div>
+      <AccessContext.Provider value={{ canEdit }}>
+        <div
+          className="transition-all duration-200"
+          style={{ marginLeft: desktopOpen ? SIDEBAR_W : 0 }}
+        >
+          {children}
+        </div>
+      </AccessContext.Provider>
 
       <PersonDialog
         open={showAddPerson}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/ui/AppShell";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
@@ -41,6 +42,7 @@ export default function RootLayout({
     >
       <body>
         <AppShell>{children}</AppShell>
+        <Toaster />
       </body>
     </html>
   );

@@ -69,6 +69,7 @@ function makeEmpty(defaultLastName?: string): PersonFormData {
     photoUrl: "",
     bio: "",
     generation: null,
+    childOrder: null,
     deathDateLunar: null,
   };
 }
@@ -223,15 +224,32 @@ export default function PersonForm({ initial, defaultLastName, placeSuggestions 
         </div>
       </div>
 
-      <div>
-        <label className="font-medium block mb-1 text-muted-foreground">Đời (thế hệ)</label>
-        <Input
-          type="text"
-          value={form.generation != null ? `Đời ${form.generation}` : ""}
-          disabled
-          placeholder="Tự động tính toán"
-          className="bg-muted text-muted-foreground"
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="font-medium block mb-1 text-muted-foreground">Đời (thế hệ)</label>
+          <Input
+            type="text"
+            value={form.generation != null ? `Đời ${form.generation}` : ""}
+            disabled
+            placeholder="Tự động tính toán"
+            className="bg-muted text-muted-foreground"
+          />
+        </div>
+        <div>
+          <label className="font-medium block mb-1">Thứ tự con</label>
+          <Input
+            type="number"
+            min={1}
+            value={form.childOrder ?? ""}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                childOrder: e.target.value ? parseInt(e.target.value) : null,
+              }))
+            }
+            placeholder="VD: 1 (con cả)"
+          />
+        </div>
       </div>
 
       <div>
@@ -240,11 +258,11 @@ export default function PersonForm({ initial, defaultLastName, placeSuggestions 
       </div>
 
       {!hideButtons && (
-        <div className="flex gap-2 justify-end pt-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex gap-2 pt-2 sm:justify-end">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1 sm:flex-none">
             Huỷ
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} className="flex-1 sm:flex-none">
             {loading ? "Đang lưu..." : "Lưu"}
           </Button>
         </div>

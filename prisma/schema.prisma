@@ -32,6 +32,7 @@ model Person {
   photoUrl       String?
   bio            String?
   generation     Int?
+  childOrder     Int?
   createdAt          DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

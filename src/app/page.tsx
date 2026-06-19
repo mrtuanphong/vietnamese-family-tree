@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { User, Heart, Users, TreePine, Pencil, Trash2 } from "lucide-react";
+import { User, Heart, Users, TreePine, Pencil, Trash2, Cake, Flame } from "lucide-react";
+import { Lunar } from "lunar-javascript";
 import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
+import { useAccess } from "@/lib/AccessContext";
 import PersonDialog from "@/components/person/PersonDialog";
 import BottomTabBar from "@/components/ui/BottomTabBar";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { Person, Relationship, Marriage } from "@/types";
 
 type Tab = "people" | "families" | "events";
+type EventCategory = "birthday" | "anniversary";
+type EventFilter = "all" | "birthday" | "anniversary";
+
+interface FamilyEvent {
+  person: Person;
+  category: EventCategory;
+  displayDate: string;
+  nextDate: Date;
+  daysUntil: number;
+}
 
 function fullName(p: Person) {
   return [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ");
@@ -79,6 +91,9 @@ function buildFamilies(
       .filter(Boolean) as Person[];
 
     children.sort((a, b) => {
+      const oa = a.childOrder ?? Infinity;
+      const ob = b.childOrder ?? Infinity;
+      if (oa !== ob) return oa - ob;
       const da = a.birthDate ?? "";
       const db = b.birthDate ?? "";
       return da !== db ? (da < db ? -1 : 1) : a.firstName.localeCompare(b.firstName, "vi");
@@ -100,6 +115,9 @@ function buildFamilies(
     if (!parent) continue;
     const children = childIds.map((id) => personMap.get(id)).filter(Boolean) as Person[];
     children.sort((a, b) => {
+      const oa = a.childOrder ?? Infinity;
+      const ob = b.childOrder ?? Infinity;
+      if (oa !== ob) return oa - ob;
       const da = a.birthDate ?? "";
       const db = b.birthDate ?? "";
       return da !== db ? (da < db ? -1 : 1) : a.firstName.localeCompare(b.firstName, "vi");
@@ -117,6 +135,76 @@ function buildFamilies(
   });
 
   return families;
+}
+
+// ── Events logic ─────────────────────────────────────────────────
+
+function getNextSolarOccurrence(month: number, day: number, today: Date): Date {
+  const year = today.getFullYear();
+  const candidate = new Date(year, month - 1, day);
+  if (candidate >= today) return candidate;
+  return new Date(year + 1, month - 1, day);
+}
+
+function getNextLunarOccurrence(lunarMonth: number, lunarDay: number, today: Date): Date | null {
+  for (const y of [today.getFullYear(), today.getFullYear() + 1]) {
+    try {
+      const solar = Lunar.fromYmd(y, lunarMonth, lunarDay).getSolar();
+      const d = new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay());
+      if (d >= today) return d;
+    } catch {
+      // invalid lunar date for this year (e.g. leap month absent)
+    }
+  }
+  return null;
+}
+
+function buildEvents(persons: Person[]): FamilyEvent[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const events: FamilyEvent[] = [];
+
+  for (const p of persons) {
+    if (!p.deathDateLunar && p.birthDate) {
+      const parts = p.birthDate.split("-");
+      const m = parseInt(parts[1] ?? "0");
+      const d = parseInt(parts[2] ?? "0");
+      if (m > 0 && d > 0) {
+        const nextDate = getNextSolarOccurrence(m, d, today);
+        const daysUntil = Math.round((nextDate.getTime() - today.getTime()) / 86400000);
+        events.push({
+          person: p,
+          category: "birthday",
+          displayDate: `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`,
+          nextDate,
+          daysUntil,
+        });
+      }
+    }
+
+    if (p.deathDateLunar) {
+      const parts = p.deathDateLunar.split("-");
+      const lm = parseInt(parts[1] ?? "0");
+      const ld = parseInt(parts[2] ?? "0");
+      if (lm > 0 && ld > 0) {
+        const nextDate = getNextLunarOccurrence(lm, ld, today);
+        if (nextDate) {
+          const daysUntil = Math.round((nextDate.getTime() - today.getTime()) / 86400000);
+          const solarD = String(nextDate.getDate()).padStart(2, "0");
+          const solarM = String(nextDate.getMonth() + 1).padStart(2, "0");
+          events.push({
+            person: p,
+            category: "anniversary",
+            displayDate: `${solarD}/${solarM} (tức ${String(ld).padStart(2, "0")}/${String(lm).padStart(2, "0")} ÂL)`,
+            nextDate,
+            daysUntil,
+          });
+        }
+      }
+    }
+  }
+
+  return events.sort((a, b) => a.daysUntil - b.daysUntil);
 }
 
 // ── Shared avatar ────────────────────────────────────────────────
@@ -200,9 +288,13 @@ function FamilyCard({ family, clanLastName }: { family: FamilyUnit; clanLastName
                     <span className="font-medium group-hover:text-brand-600 transition-colors">
                       {fullName(child)}
                     </span>
-                    {(years || child.generation != null) && (
+                    {(years || child.generation != null || child.childOrder != null) && (
                       <span className="text-xs text-gray-400 ml-2">
-                        {[child.generation != null ? `Đời ${child.generation}` : null, years]
+                        {[
+                          child.childOrder != null ? `Con thứ ${child.childOrder}` : null,
+                          child.generation != null ? `Đời ${child.generation}` : null,
+                          years,
+                        ]
                           .filter(Boolean)
                           .join(" · ")}
                       </span>
@@ -232,6 +324,7 @@ export default function PeoplePage() {
   const [activeTab, setActiveTab] = useState<Tab>("people");
   const [editTarget, setEditTarget] = useState<Person | null>(null);
   const [showAddPerson, setShowAddPerson] = useState(false);
+  const [eventFilter, setEventFilter] = useState<EventFilter>("all");
 
   const load = () =>
     Promise.all([
@@ -272,6 +365,7 @@ export default function PeoplePage() {
     load();
   };
 
+  const { canEdit } = useAccess();
   const hasGenerations = persons.some((p) => p.generation != null);
   const generations = Array.from(
     new Set(persons.map((p) => p.generation).filter((g): g is number => g != null))
@@ -290,6 +384,8 @@ export default function PeoplePage() {
 
   const families = buildFamilies(persons, relationships, marriages);
   const clanLastName = persons.find((p) => p.id === superAdminId)?.lastName ?? null;
+  const allEvents = buildEvents(persons);
+  const filteredEvents = allEvents.filter((ev) => eventFilter === "all" || ev.category === eventFilter);
 
   return (
     <div className="min-h-screen bg-white">
@@ -300,9 +396,9 @@ export default function PeoplePage() {
       <main className="px-4 sm:px-6 py-6 pb-20 sm:pb-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
         <TabsList className="mb-4 w-full">
+          <TabsTrigger value="events" className="flex-1">Sự kiện</TabsTrigger>
           <TabsTrigger value="people" className="flex-1">Người</TabsTrigger>
           <TabsTrigger value="families" className="flex-1">Gia đình</TabsTrigger>
-          <TabsTrigger value="events" disabled className="flex-1">Sự kiện</TabsTrigger>
         </TabsList>
 
         {/* ── People tab ── */}
@@ -389,7 +485,7 @@ export default function PeoplePage() {
                   <TableRow>
                     <TableCell colSpan={100} className="text-center py-12">
                       <p className="text-gray-500 mb-3">Chưa có ai. Thêm người đầu tiên.</p>
-                      <Button onClick={() => setShowAddPerson(true)}>+ Thêm người</Button>
+                      {canEdit && <Button onClick={() => setShowAddPerson(true)}>+ Thêm người</Button>}
                     </TableCell>
                   </TableRow>
                 )}
@@ -437,10 +533,12 @@ export default function PeoplePage() {
                         <Button variant="outline" size="icon" asChild title="Xem cây">
                           <Link href={`/tree?selected=${p.id}`}><TreePine size={16} /></Link>
                         </Button>
-                        <Button variant="outline" size="icon" title="Sửa" onClick={() => setEditTarget(p)}>
-                          <Pencil size={16} />
-                        </Button>
-                        {p.id !== superAdminId && (
+                        {canEdit && (
+                          <Button variant="outline" size="icon" title="Sửa" onClick={() => setEditTarget(p)}>
+                            <Pencil size={16} />
+                          </Button>
+                        )}
+                        {canEdit && p.id !== superAdminId && (
                           <Button variant="destructive" size="icon" title="Xoá" onClick={() => handleDelete(p.id)}>
                             <Trash2 size={16} />
                           </Button>
@@ -473,6 +571,72 @@ export default function PeoplePage() {
                   ))}
                 </div>
               </>
+            )}
+          </>
+        </TabsContent>
+
+        {/* ── Events tab ── */}
+        <TabsContent value="events">
+          <>
+            <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1 scrollbar-none">
+              {(["all", "birthday", "anniversary"] as EventFilter[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setEventFilter(f)}
+                  className={`px-3.5 py-1 text-[0.875rem] font-medium rounded-full border transition-colors shrink-0 ${
+                    eventFilter === f
+                      ? "bg-brand-500 text-white border-brand-500"
+                      : "bg-white text-gray-600 border-border hover:border-gray-400"
+                  }`}
+                >
+                  {f === "all" ? "Tất cả" : f === "birthday" ? "Sinh nhật" : "Giỗ"}
+                </button>
+              ))}
+            </div>
+
+            {filteredEvents.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-gray-400">Không có sự kiện nào.</p>
+                <p className="text-sm text-gray-400 mt-1">Thêm ngày sinh hoặc ngày mất để hiển thị ở đây.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {filteredEvents.map((ev) => (
+                  <Link
+                    key={`${ev.person.id}-${ev.category}`}
+                    href={`/tree?selected=${ev.person.id}`}
+                    className="flex items-center gap-3 px-4 py-3 bg-white border rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <Avatar person={ev.person} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium truncate">{fullName(ev.person)}</span>
+                        <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                          ev.category === "birthday"
+                            ? "bg-blue-50 text-blue-600"
+                            : "bg-orange-50 text-orange-600"
+                        }`}>
+                          {ev.category === "birthday"
+                            ? <><Cake size={11} /> Sinh nhật</>
+                            : <><Flame size={11} /> Giỗ</>}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-400">{ev.displayDate}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {ev.daysUntil === 0 ? (
+                        <span className="text-sm font-semibold text-brand-500">Hôm nay</span>
+                      ) : ev.daysUntil === 1 ? (
+                        <span className="text-sm font-medium text-amber-500">Ngày mai</span>
+                      ) : ev.daysUntil <= 7 ? (
+                        <span className="text-sm font-medium text-amber-400">{ev.daysUntil} ngày</span>
+                      ) : (
+                        <span className="text-sm text-gray-400">{ev.daysUntil} ngày</span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
             )}
           </>
         </TabsContent>

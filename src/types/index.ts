@@ -24,6 +24,7 @@ export interface Person {
   photoUrl?: string | null;
   bio?: string | null;
   generation?: number | null;
+  childOrder?: number | null;
   createdAt?: string;
 }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { User } from "lucide-react";
 import { clanApi, personsApi } from "@/lib/api";
+import { useAccess } from "@/lib/AccessContext";
 import BottomTabBar from "@/components/ui/BottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ export default function ClanPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const { canEdit } = useAccess();
 
   useEffect(() => {
     Promise.all([clanApi.get(), personsApi.getAll()]).then(([clan, ps]) => {
@@ -115,7 +117,7 @@ export default function ClanPage() {
           </div>
 
           {/* Super Admin */}
-          <div className="border-t pt-5">
+          {canEdit && <div className="border-t pt-5">
             <label className="font-medium">Quản trị viên (Super Admin)</label>
             <p className="text-xs text-gray-400 mt-0.5 mb-3">Chọn 1 người trong dòng họ làm quản trị viên workspace</p>
 
@@ -190,25 +192,30 @@ export default function ClanPage() {
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
-          <div className="flex items-center justify-between py-3 border-t">
+          {canEdit && <div className="flex items-center justify-between py-3 border-t">
             <div>
-              <p className="font-medium">Kích hoạt workspace</p>
-              <p className="text-xs text-gray-400 mt-0.5">Tắt để ẩn dòng họ này khỏi danh sách</p>
+              <p className="font-medium">Cho phép truy cập công khai</p>
+              <p className="text-xs text-gray-400 mt-0.5">Tắt để chỉ cho phép Super Admin xem thông tin</p>
             </div>
-            <Switch checked disabled />
-          </div>
+            <Switch
+              checked={form.enabled}
+              onCheckedChange={(v) => setForm((prev) => ({ ...prev, enabled: v }))}
+            />
+          </div>}
 
         </div>
-        <div className="flex flex-col gap-2 border-t pt-4 mt-4 sm:mt-0 sm:border-t-0 sm:pt-0">
-          <Button type="submit" disabled={saving} className="w-full">
-            {saving ? "Đang lưu..." : "Lưu thông tin"}
-          </Button>
-          <span className={`text-sm text-center transition-opacity ${saved ? "opacity-100 text-green-600" : "opacity-0"}`}>
-            ✓ Đã lưu
-          </span>
-        </div>
+        {canEdit && (
+          <div className="flex flex-col gap-2 mt-4">
+            <Button type="submit" disabled={saving} className="w-full">
+              {saving ? "Đang lưu..." : "Lưu thông tin"}
+            </Button>
+            <span className={`text-sm text-center transition-opacity ${saved ? "opacity-100 text-green-600" : "opacity-0"}`}>
+              ✓ Đã lưu
+            </span>
+          </div>
+        )}
         </form>
       </main>
       <BottomTabBar />
