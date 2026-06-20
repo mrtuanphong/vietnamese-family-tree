@@ -159,15 +159,6 @@ export default function ClanPage() {
                   <p className="font-medium">{fullName(superAdmin)}</p>
                   <p className="text-xs text-brand-500">Tài khoản Super Admin</p>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setForm((prev) => ({ ...prev, superAdminId: null, superAdminGeneration: null }))}
-                  className="ml-auto text-xs text-gray-400 hover:text-red-500"
-                >
-                  Bỏ chọn
-                </Button>
               </div>
             )}
 

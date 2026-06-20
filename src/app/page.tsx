@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame, MoreHorizontal, Loader2 } from "lucide-react";
+import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame, MoreHorizontal, Loader2, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Lunar } from "lunar-javascript";
 import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
@@ -211,8 +211,8 @@ function buildEvents(persons: Person[]): FamilyEvent[] {
 
 // ── Shared avatar ────────────────────────────────────────────────
 
-function Avatar({ person, size = "md" }: { person: Person; size?: "sm" | "md" }) {
-  const sz = size === "sm" ? "w-8 h-8" : "w-10 h-10";
+function Avatar({ person, size = "md", isFirstChild }: { person: Person; size?: "sm" | "md" | "table"; isFirstChild?: boolean }) {
+  const sz = size === "sm" ? "w-8 h-8" : size === "table" ? "w-9 h-9" : "w-10 h-10";
   const iconSz = size === "sm" ? 15 : 18;
   const color =
     person.gender === "female"
@@ -221,9 +221,16 @@ function Avatar({ person, size = "md" }: { person: Person; size?: "sm" | "md" })
       ? "bg-gray-100 text-gray-500"
       : "bg-gray-100 text-gray-400";
   return (
-    <span className={`shrink-0 ${sz} rounded-full flex items-center justify-center ${color}`}>
-      <User size={iconSz} />
-    </span>
+    <div className="relative shrink-0 inline-flex">
+      <span className={`${sz} rounded-full flex items-center justify-center ${color}`}>
+        <User size={iconSz} />
+      </span>
+      {isFirstChild && (
+        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center shadow-sm">
+          <Star size={9} className="text-white" fill="currentColor" />
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -248,7 +255,7 @@ function FamilyCard({ family }: { family: FamilyUnit }) {
             href={`/tree?selected=${spouse1.id}`}
             className="flex items-center gap-2 hover:opacity-75 transition-opacity min-w-0"
           >
-            <Avatar person={spouse1} />
+            <Avatar person={spouse1} isFirstChild={spouse1.childOrder === 1} />
             <span className="font-semibold truncate">{fullName(spouse1)}</span>
             <OutsiderBadge label={outsiderLabel(spouse1)} />
           </Link>
@@ -260,7 +267,7 @@ function FamilyCard({ family }: { family: FamilyUnit }) {
               href={`/tree?selected=${spouse2.id}`}
               className="flex items-center gap-2 hover:opacity-75 transition-opacity min-w-0"
             >
-              <Avatar person={spouse2} />
+              <Avatar person={spouse2} isFirstChild={spouse2.childOrder === 1} />
               <span className="font-semibold truncate">{fullName(spouse2)}</span>
               <OutsiderBadge label={outsiderLabel(spouse2)} />
             </Link>
@@ -285,7 +292,7 @@ function FamilyCard({ family }: { family: FamilyUnit }) {
                   href={`/tree?selected=${child.id}`}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-brand-50 transition-colors group"
                 >
-                  <Avatar person={child} size="sm" />
+                  <Avatar person={child} size="sm" isFirstChild={child.childOrder === 1} />
                   <div className="flex-1 min-w-0">
                     <span className="font-medium group-hover:text-brand-600 transition-colors">
                       {fullName(child)}
@@ -329,6 +336,8 @@ export default function PeoplePage() {
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [eventFilter, setEventFilter] = useState<EventFilter>("all");
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [page, setPage] = useState(1);
 
   const load = () =>
     Promise.all([
@@ -408,6 +417,10 @@ export default function PeoplePage() {
       return b.firstName.localeCompare(a.firstName, "vi");
     });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
   const families = buildFamilies(persons, relationships, marriages);
   const clanLastName = clanLastNameSetting ?? persons.find((p) => p.id === superAdminId)?.lastName ?? null;
   const allEvents = buildEvents(persons);
@@ -430,7 +443,7 @@ export default function PeoplePage() {
             <div className="flex items-center gap-2 mb-3">
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Tìm theo tên..."
                 className="flex-1 min-w-0"
               />
@@ -440,7 +453,7 @@ export default function PeoplePage() {
               <div className="flex flex-col gap-2 mb-4">
                 <div className="flex overflow-x-auto gap-1.5 pb-1 scrollbar-none">
                   <button
-                    onClick={() => setGenFilter(null)}
+                    onClick={() => { setGenFilter(null); setPage(1); }}
                     className={`px-3.5 py-1 text-[0.875rem] font-medium rounded-full border transition-colors shrink-0 ${genFilter === null ? "bg-brand-500 text-white border-brand-500" : "bg-white text-gray-600 border-border hover:border-gray-400"}`}
                   >
                     Tất cả
@@ -448,17 +461,19 @@ export default function PeoplePage() {
                   {generations.map((g) => (
                     <button
                       key={g}
-                      onClick={() => setGenFilter(g)}
+                      onClick={() => { setGenFilter(g); setPage(1); }}
                       className={`px-3.5 py-1 text-[0.875rem] font-medium rounded-full border transition-colors shrink-0 ${genFilter === g ? "bg-brand-500 text-white border-brand-500" : "bg-white text-gray-600 border-border hover:border-gray-400"}`}
                     >
                       Đời {g}
                     </button>
                   ))}
                 </div>
-                <div className="flex justify-end items-center gap-1.5">
+                <div className="flex justify-between items-center gap-1.5 flex-wrap">
+                  <span className="text-sm text-gray-400">Tổng {filtered.length} người</span>
+                  <div className="flex items-center gap-1.5">
                   <span className="text-sm text-gray-600 whitespace-nowrap">Xếp theo</span>
-                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-                    <SelectTrigger size="sm" className="w-40">
+                  <Select value={sortBy} onValueChange={(v) => { setSortBy(v as typeof sortBy); setPage(1); }}>
+                    <SelectTrigger size="sm" className="w-38">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -469,14 +484,26 @@ export default function PeoplePage() {
                       <SelectItem value="name_desc">Tên (Z-A)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                    <SelectTrigger size="sm" className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="20">20 / trang</SelectItem>
+                      <SelectItem value="50">50 / trang</SelectItem>
+                      <SelectItem value="100">100 / trang</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-sm text-gray-400">Tổng {filtered.length} người</span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm text-gray-600 whitespace-nowrap">Xếp theo</span>
-                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-                    <SelectTrigger size="sm" className="w-40">
+                  <Select value={sortBy} onValueChange={(v) => { setSortBy(v as typeof sortBy); setPage(1); }}>
+                    <SelectTrigger size="sm" className="w-38">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -485,6 +512,16 @@ export default function PeoplePage() {
                       <SelectItem value="generation_desc">Đời (giảm dần)</SelectItem>
                       <SelectItem value="name_asc">Tên (A-Z)</SelectItem>
                       <SelectItem value="name_desc">Tên (Z-A)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                    <SelectTrigger size="sm" className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="20">20 / trang</SelectItem>
+                      <SelectItem value="50">50 / trang</SelectItem>
+                      <SelectItem value="100">100 / trang</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -494,6 +531,7 @@ export default function PeoplePage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="pl-2 pr-1 w-8 text-right text-gray-400">#</TableHead>
                   <TableHead className="pl-2 pr-2">Họ tên</TableHead>
                   <TableHead className="hidden sm:table-cell">Giới tính</TableHead>
                   {hasGenerations && <TableHead className="text-right hidden sm:table-cell">Đời</TableHead>}
@@ -503,7 +541,7 @@ export default function PeoplePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 && (
+                {paged.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={100} className="text-center py-12">
                       <p className="text-gray-500 mb-3">Chưa có ai. Thêm người đầu tiên.</p>
@@ -511,19 +549,14 @@ export default function PeoplePage() {
                     </TableCell>
                   </TableRow>
                 )}
-                {filtered.map((p) => (
+                {paged.map((p, i) => (
                   <TableRow key={p.id}>
+                    <TableCell className="pl-2 pr-1 py-3 text-right text-xs text-gray-400 w-8">
+                      {(safePage - 1) * pageSize + i + 1}
+                    </TableCell>
                     <TableCell className="pl-2 pr-2 py-3">
                       <div className="flex items-center gap-3">
-                        <span className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
-                          p.gender === "female"
-                            ? "bg-pink-100 text-pink-400"
-                            : p.gender === "male"
-                            ? "bg-gray-100 text-gray-500"
-                            : "bg-gray-100 text-gray-400"
-                        }`}>
-                          <User size={18} />
-                        </span>
+                        <Avatar person={p} size="table" isFirstChild={p.childOrder === 1} />
                         <div className="flex flex-col min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span className="font-medium">{fullName(p)}</span>
@@ -605,6 +638,32 @@ export default function PeoplePage() {
                 ))}
               </TableBody>
             </Table>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+                <span>Tổng {filtered.length} người · Trang {safePage}/{totalPages}</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft size={14} />Trước
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safePage === totalPages}
+                    className="gap-1"
+                  >
+                    Sau<ChevronRight size={14} />
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
         </TabsContent>
 

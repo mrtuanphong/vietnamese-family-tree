@@ -98,11 +98,11 @@ if (pathname.startsWith("/person")) return "Chi tiết";
 
       {/* Sidebar — full viewport height */}
       <aside
-        className="fixed left-0 top-0 h-screen w-56 bg-white border-r z-20 flex flex-col transition-transform duration-200"
+        className="fixed left-0 top-0 h-screen w-56 bg-white z-20 flex flex-col transition-transform duration-200"
         style={{ transform: open ? "translateX(0)" : "translateX(-100%)" }}
       >
         {/* Sidebar brand */}
-        <div className="h-14 shrink-0 flex items-center gap-2 px-4 bg-primary">
+        <div className="h-14 shrink-0 flex items-center gap-2 px-4 bg-primary border-r border-primary-foreground/20">
           <span className="text-primary-foreground font-semibold text-base truncate flex-1 min-w-0">
             {clanName}
           </span>
@@ -110,7 +110,7 @@ if (pathname.startsWith("/person")) return "Chi tiết";
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-2">
+        <nav className="flex-1 overflow-y-auto py-2 border-r">
           {navItems.map(({ href, label, exact, icon: Icon }) => {
             const active = exact ? pathname === href : pathname.startsWith(href);
             return (
