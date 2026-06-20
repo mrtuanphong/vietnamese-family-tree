@@ -2,6 +2,7 @@
 
 import { Handle, Position } from "reactflow";
 import { Star } from "lucide-react";
+import LotusIcon from "@/components/icons/LotusIcon";
 import { Button } from "@/components/ui/button";
 import type { Person } from "@/types";
 
@@ -23,6 +24,7 @@ export default function PersonNode({ data }: { data: PersonNodeData }) {
   const outsider = outsiderLabel(person);
   const name = [person.lastName, person.middleName, person.firstName].filter(Boolean).join(" ");
   const years = "";
+  const deceased = !!person.deathDateLunar;
 
   const borderColor = isSelected
     ? "border-orange-400"
@@ -67,7 +69,7 @@ export default function PersonNode({ data }: { data: PersonNodeData }) {
         )}
         <div className="px-2 py-2 flex flex-col items-center gap-0.5">
           <p className="text-xs font-semibold text-center leading-tight">{name}</p>
-          {(person.generation != null || years || outsider) && (
+          {(person.generation != null || years || outsider || deceased) && (
             <div className="flex items-center gap-1 justify-center flex-wrap">
               {person.generation != null && (
                 <span className="text-[10px] px-1.5 py-0.5 bg-brand-100 text-brand-600 rounded-full font-medium leading-none">
@@ -80,6 +82,11 @@ export default function PersonNode({ data }: { data: PersonNodeData }) {
                 </span>
               )}
               {years && <p className="text-[10px] text-gray-400">{years}</p>}
+              {deceased && (
+                <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded-full leading-none flex items-center">
+                  <LotusIcon size={10} className="text-gray-700" />
+                </span>
+              )}
             </div>
           )}
         </div>

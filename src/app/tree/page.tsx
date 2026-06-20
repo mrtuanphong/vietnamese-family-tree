@@ -284,7 +284,7 @@ function TreePageContent() {
         {isMutating && <Loader2 size={16} className="animate-spin text-gray-400" />}
         {rootPersonId && (() => {
           const rootPerson = persons.find((p) => p.id === rootPersonId);
-          const name = rootPerson ? [rootPerson.lastName, rootPerson.firstName].filter(Boolean).join(" ") : "";
+          const name = rootPerson ? [rootPerson.lastName, rootPerson.middleName, rootPerson.firstName].filter(Boolean).join(" ") : "";
           return (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 text-sm text-brand-700">
               <span>Cây từ: <strong>{name}</strong></span>

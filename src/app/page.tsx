@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame, MoreHorizontal, Loader2, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import LotusIcon from "@/components/icons/LotusIcon";
 import { Lunar } from "lunar-javascript";
 import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
@@ -214,16 +215,18 @@ function buildEvents(persons: Person[]): FamilyEvent[] {
 function Avatar({ person, size = "md", isFirstChild }: { person: Person; size?: "sm" | "md" | "table"; isFirstChild?: boolean }) {
   const sz = size === "sm" ? "w-8 h-8" : size === "table" ? "w-9 h-9" : "w-10 h-10";
   const iconSz = size === "sm" ? 15 : 18;
+  const deceased = !!person.deathDateLunar;
   const color =
     person.gender === "female"
-      ? "bg-pink-100 text-pink-400"
-      : person.gender === "male"
-      ? "bg-gray-100 text-gray-500"
-      : "bg-gray-100 text-gray-400";
+    ? "bg-pink-100 text-pink-400"
+    : person.gender === "male"
+    ? "bg-gray-100 text-gray-500"
+    : "bg-gray-100 text-gray-400";
   return (
     <div className="relative shrink-0 inline-flex">
+      {/* deceased always uses icon avatar, never photo */}
       <span className={`${sz} rounded-full flex items-center justify-center ${color}`}>
-        <User size={iconSz} />
+        {deceased ? <LotusIcon size={iconSz} className={person.gender === "female" ? "text-pink-800" : "text-gray-800"} /> : <User size={iconSz} />}
       </span>
       {isFirstChild && (
         <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center shadow-sm">
@@ -233,6 +236,7 @@ function Avatar({ person, size = "md", isFirstChild }: { person: Person; size?: 
     </div>
   );
 }
+
 
 // ── Family card ──────────────────────────────────────────────────
 
