@@ -23,6 +23,7 @@ import PersonSidebar from "@/components/tree/PersonSidebar";
 import TreeOutline from "@/components/tree/TreeOutline";
 import PersonDialog from "@/components/person/PersonDialog";
 import { clanApi } from "@/lib/api";
+import { useAccess } from "@/lib/AccessContext";
 import BottomTabBar from "@/components/ui/BottomTabBar";
 import { Input } from "@/components/ui/input";
 import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
@@ -81,6 +82,7 @@ function TreePageContent() {
   const [viewMode, setViewMode] = useState<"graph" | "outline">("outline");
   const [outlineSearch, setOutlineSearch] = useState("");
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const { canEdit } = useAccess();
   const outlineMatchCount = outlineSearch
     ? persons.filter((p) =>
         [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ")
@@ -408,6 +410,7 @@ function TreePageContent() {
             onRemoveSpouse={handleRemoveSpouse}
             onSetRoot={handleSetRoot}
             isMutating={isMutating}
+            canEdit={canEdit}
           />
         )}
       </div>

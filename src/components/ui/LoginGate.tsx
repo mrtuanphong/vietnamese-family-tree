@@ -15,16 +15,16 @@ export default function LoginGate({ clanName, isPublic, onGranted }: LoginGatePr
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showAdminForm, setShowAdminForm] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (phone: string, pwd: string) => {
     setError("");
     setLoading(true);
     try {
       const res = await fetch("/api/access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: account, password }),
+        body: JSON.stringify({ phone, password: pwd }),
       });
       const data = await res.json();
       if (data.granted) {
@@ -42,8 +42,11 @@ export default function LoginGate({ clanName, isPublic, onGranted }: LoginGatePr
     }
   };
 
-  const handleEnter = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSubmit(e as unknown as React.FormEvent);
+  const handleGuestLogin = () => submit("", "");
+
+  const handleAdminSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submit(account, password);
   };
 
   return (
@@ -54,45 +57,71 @@ export default function LoginGate({ clanName, isPublic, onGranted }: LoginGatePr
           <p className="text-sm text-gray-500 mt-1">Vui lòng xác thực để tiếp tục</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white border rounded-2xl p-6 flex flex-col gap-4">
-          {isPublic && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 text-sm text-blue-700">
-              Tài khoản xem: <span className="font-semibold">do</span> · Mật khẩu: <span className="font-semibold">do</span>
-            </div>
+        <div className="bg-white border rounded-2xl p-6 flex flex-col gap-4">
+          {isPublic && !showAdminForm && (
+            <>
+              <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 text-sm text-blue-700">
+                Đây là trang dòng họ công khai. Bấm <span className="font-semibold">Đăng nhập</span> để vào xem.
+              </div>
+
+              {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+
+              <Button onClick={handleGuestLogin} disabled={loading} className="w-full">
+                {loading ? "Đang kiểm tra..." : "Đăng nhập"}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setShowAdminForm(true)}
+                className="text-xs text-gray-400 hover:text-gray-600 text-center transition-colors"
+              >
+                Đăng nhập với tài khoản quản lý
+              </button>
+            </>
           )}
 
-          <div>
-            <label className="font-medium block mb-1.5">Tài khoản</label>
-            <Input
-              type="text"
-              value={account}
-              onChange={(e) => { setAccount(e.target.value); setError(""); }}
-              placeholder="Nhập tài khoản"
-              autoFocus
-              required
-              onKeyDown={handleEnter}
-            />
-          </div>
+          {(!isPublic || showAdminForm) && (
+            <form onSubmit={handleAdminSubmit} className="flex flex-col gap-4">
+              {showAdminForm && (
+                <button
+                  type="button"
+                  onClick={() => { setShowAdminForm(false); setError(""); }}
+                  className="text-xs text-gray-400 hover:text-gray-600 text-left transition-colors"
+                >
+                  ← Quay lại
+                </button>
+              )}
 
-          <div>
-            <label className="font-medium block mb-1.5">Mật khẩu</label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(""); }}
-              placeholder="Nhập mật khẩu"
-              onKeyDown={handleEnter}
-            />
-          </div>
+              <div>
+                <label className="font-medium block mb-1.5">Tài khoản</label>
+                <Input
+                  type="text"
+                  value={account}
+                  onChange={(e) => { setAccount(e.target.value); setError(""); }}
+                  placeholder="Nhập tài khoản"
+                  autoFocus
+                  required
+                />
+              </div>
 
-          {error && (
-            <p className="text-sm text-red-500 font-medium">{error}</p>
+              <div>
+                <label className="font-medium block mb-1.5">Mật khẩu</label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                  placeholder="Nhập mật khẩu"
+                />
+              </div>
+
+              {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? "Đang kiểm tra..." : "Đăng nhập"}
+              </Button>
+            </form>
           )}
-
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Đang kiểm tra..." : "Đăng nhập"}
-          </Button>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -14,14 +14,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const { phone, password } = await req.json();
-    if (!phone) return NextResponse.json({ granted: false });
-
     const clan = await prisma.clan.findFirst();
 
-    // Guest account — only when public
-    if (clan?.enabled && phone === "do" && password === "do") {
+    // Guest access — public clan, no credentials needed
+    if (clan?.enabled && !phone) {
       return NextResponse.json({ granted: true, name: "Tài khoản khách", canEdit: false });
     }
+
+    if (!phone) return NextResponse.json({ granted: false });
 
     if (!clan?.superAdminId) return NextResponse.json({ granted: false });
 

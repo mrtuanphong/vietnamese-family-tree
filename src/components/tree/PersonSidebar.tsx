@@ -51,6 +51,7 @@ interface PersonSidebarProps {
   rootPersonId?: string | null;
   onSetRoot: (id: string | null) => void;
   isMutating?: boolean;
+  canEdit?: boolean;
 }
 
 function fullName(p: Person) {
@@ -78,6 +79,7 @@ export default function PersonSidebar({
   rootPersonId,
   onSetRoot,
   isMutating = false,
+  canEdit = true,
 }: PersonSidebarProps) {
   const isSuperAdmin = person.id === superAdminId;
   const personMap = new Map(allPersons.map((p) => [p.id, p]));
@@ -256,14 +258,12 @@ export default function PersonSidebar({
               {parents.map(({ relId, person: p }) => (
                 <li key={relId} className="flex items-center justify-between gap-2">
                   <span className="text-sm">{fullName(p)}</span>
-                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "parent", relId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
-                    <X size={12} />
-                  </Button>
+                  {canEdit && <Button variant="ghost" size="icon" onClick={() => setPending({ type: "parent", relId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ"><X size={12} /></Button>}
                 </li>
               ))}
             </ul>
           )}
-          <Select value={addParentSel} onValueChange={handleAddParent} disabled={isMutating}>
+          {canEdit && <Select value={addParentSel} onValueChange={handleAddParent} disabled={isMutating}>
             <SelectTrigger size="sm" className="mt-2 w-full text-xs">
               <SelectValue placeholder="+ Thêm cha/mẹ" />
             </SelectTrigger>
@@ -272,7 +272,7 @@ export default function PersonSidebar({
               {unrelated.length > 0 && <SelectSeparator />}
               {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{p.firstName} - {fullName(p)}</SelectItem>)}
             </SelectContent>
-          </Select>
+          </Select>}
         </div>
 
         <div className="px-4 py-3 border-b">
@@ -282,14 +282,12 @@ export default function PersonSidebar({
               {spouses.map(({ marriageId, person: p }) => (
                 <li key={marriageId} className="flex items-center justify-between gap-2">
                   <span className="text-sm">{fullName(p)}</span>
-                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "spouse", marriageId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
-                    <X size={12} />
-                  </Button>
+                  {canEdit && <Button variant="ghost" size="icon" onClick={() => setPending({ type: "spouse", marriageId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ"><X size={12} /></Button>}
                 </li>
               ))}
             </ul>
           )}
-          <Select value={addSpouseSel} onValueChange={handleAddSpouse} disabled={isMutating}>
+          {canEdit && <Select value={addSpouseSel} onValueChange={handleAddSpouse} disabled={isMutating}>
             <SelectTrigger size="sm" className="mt-2 w-full text-xs">
               <SelectValue placeholder="+ Thêm vợ/chồng" />
             </SelectTrigger>
@@ -298,7 +296,7 @@ export default function PersonSidebar({
               {unrelated.length > 0 && <SelectSeparator />}
               {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{p.firstName} - {fullName(p)}</SelectItem>)}
             </SelectContent>
-          </Select>
+          </Select>}
         </div>
 
         <div className="px-4 py-3 border-b">
@@ -308,14 +306,12 @@ export default function PersonSidebar({
               {children.map(({ relId, person: p }) => (
                 <li key={relId} className="flex items-center justify-between gap-2">
                   <span className="text-sm">{fullName(p)}</span>
-                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "child", relId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
-                    <X size={12} />
-                  </Button>
+                  {canEdit && <Button variant="ghost" size="icon" onClick={() => setPending({ type: "child", relId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ"><X size={12} /></Button>}
                 </li>
               ))}
             </ul>
           )}
-          <Select value={addChildSel} onValueChange={handleAddChild} disabled={isMutating}>
+          {canEdit && <Select value={addChildSel} onValueChange={handleAddChild} disabled={isMutating}>
             <SelectTrigger size="sm" className="mt-2 w-full text-xs">
               <SelectValue placeholder="+ Thêm con" />
             </SelectTrigger>
@@ -324,19 +320,21 @@ export default function PersonSidebar({
               {unrelated.length > 0 && <SelectSeparator />}
               {unrelated.map((p) => <SelectItem key={p.id} value={p.id}>{p.firstName} - {fullName(p)}</SelectItem>)}
             </SelectContent>
-          </Select>
+          </Select>}
         </div>
 
-        <div className="px-4 py-3 flex gap-2 mt-auto">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(person)} disabled={isMutating}>
-            Sửa
-          </Button>
-          {!isSuperAdmin && (
-            <Button variant="destructive" size="sm" onClick={() => onDelete(person.id)} disabled={isMutating}>
-              Xoá
+        {canEdit && (
+          <div className="px-4 py-3 flex gap-2 mt-auto">
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(person)} disabled={isMutating}>
+              Sửa
             </Button>
-          )}
-        </div>
+            {!isSuperAdmin && (
+              <Button variant="destructive" size="sm" onClick={() => onDelete(person.id)} disabled={isMutating}>
+                Xoá
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
