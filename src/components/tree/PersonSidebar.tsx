@@ -235,6 +235,13 @@ export default function PersonSidebar({
           )}
         </div>
 
+        {person.currentAddress && (
+          <div className="px-4 py-3 border-b">
+            <p className="text-xs text-gray-500 font-medium mb-1">Địa chỉ thường trú</p>
+            <p className="text-gray-700 text-sm">{person.currentAddress}</p>
+          </div>
+        )}
+
         {person.bio && (
           <div className="px-4 py-3 border-b">
             <p className="text-xs text-gray-500 font-medium mb-1">Tiểu sử</p>

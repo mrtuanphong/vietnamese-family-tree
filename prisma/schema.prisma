@@ -30,6 +30,7 @@ model Person {
   deathDateLunar String?
   deathPlace     String?
   phone          String?
+  currentAddress String?
   photoUrl       String?
   bio            String?
   generation     Int?

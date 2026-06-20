@@ -22,6 +22,7 @@ export interface Person {
   deathDateLunar?: string | null;
   deathPlace?: string | null;
   phone?: string | null;
+  currentAddress?: string | null;
   photoUrl?: string | null;
   bio?: string | null;
   generation?: number | null;

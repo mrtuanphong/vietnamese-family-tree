@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import PlaceCombobox from "@/components/person/PlaceCombobox";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type PersonFormData = Omit<Person, "id">;
 
@@ -68,6 +68,7 @@ function makeEmpty(defaultLastName?: string): PersonFormData {
     birthPlace: "",
     deathPlace: "",
     phone: "",
+    currentAddress: "",
     photoUrl: "",
     bio: "",
     generation: null,
@@ -75,52 +76,6 @@ function makeEmpty(defaultLastName?: string): PersonFormData {
     isClanMember: true,
     deathDateLunar: null,
   };
-}
-
-
-function DatePartsInput({
-  label,
-  parts,
-  onChange,
-}: {
-  label: string;
-  parts: DateParts;
-  onChange: (parts: DateParts) => void;
-}) {
-  const set = (field: keyof DateParts) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    onChange({ ...parts, [field]: e.target.value });
-
-  return (
-    <div>
-      {label && <label className="font-medium block mb-1">{label}</label>}
-      <div className="flex gap-1.5">
-        <Input
-          type="number"
-          min={1}
-          max={9999}
-          value={parts.year}
-          onChange={set("year")}
-          placeholder="Năm"
-        />
-        <Input
-          type="number"
-          min={1}
-          max={12}
-          value={parts.month}
-          onChange={set("month")}
-          placeholder="Tháng"
-        />
-        <Input
-          type="number"
-          min={1}
-          max={31}
-          value={parts.day}
-          onChange={set("day")}
-          placeholder="Ngày"
-        />
-      </div>
-    </div>
-  );
 }
 
 export default function PersonForm({ initial, defaultLastName, clanLastName, placeSuggestions = [], onSubmit, onCancel, formId, hideButtons, onLoadingChange }: PersonFormProps) {
@@ -152,124 +107,136 @@ export default function PersonForm({ initial, defaultLastName, clanLastName, pla
 
   return (
     <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div>
-          <label className="font-medium block mb-1">Họ *</label>
-          <Input required value={form.lastName} onChange={set("lastName")} placeholder={clanLastName ?? "Nguyễn"} />
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Đệm</label>
-          <Input value={form.middleName ?? ""} onChange={set("middleName")} placeholder="Văn" />
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Tên *</label>
-          <Input required value={form.firstName} onChange={set("firstName")} placeholder="An" />
-        </div>
-      </div>
+      <Tabs defaultValue="basic">
+        <TabsList className="w-full">
+          <TabsTrigger value="basic" className="flex-1">Cơ bản</TabsTrigger>
+          <TabsTrigger value="places" className="flex-1">Địa điểm</TabsTrigger>
+          <TabsTrigger value="other" className="flex-1">Thông tin khác</TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="font-medium block mb-1">Giới tính *</label>
-          <Select
-            value={form.gender}
-            onValueChange={(v) => setForm((prev) => ({ ...prev, gender: v as Gender }))}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="male">Nam</SelectItem>
-              <SelectItem value="female">Nữ</SelectItem>
-              <SelectItem value="unknown">Không rõ</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Số điện thoại</label>
-          <Input value={form.phone ?? ""} onChange={set("phone")} type="tel" placeholder="0912 345 678" />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between py-1">
-        <div>
-          <p className="font-medium">Thành viên trong dòng họ</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Tắt nếu là Dâu hoặc Rể</p>
-        </div>
-        <Switch
-          checked={form.isClanMember !== false}
-          onCheckedChange={(v) => setForm((prev) => ({ ...prev, isClanMember: v }))}
-        />
-      </div>
-
-      <div>
-        <label className="font-medium block mb-1">Ngày sinh <span className="text-muted-foreground font-normal">(Dương lịch)</span></label>
-        <div className="flex gap-1.5">
-          <Input className="flex-1 min-w-0" type="number" min={1} max={31} value={birthParts.day} onChange={(e) => setBirthParts({ ...birthParts, day: e.target.value })} placeholder="Ngày" />
-          <Input className="flex-1 min-w-0" type="number" min={1} max={12} value={birthParts.month} onChange={(e) => setBirthParts({ ...birthParts, month: e.target.value })} placeholder="Tháng" />
-          <Input className="flex-1 min-w-0" type="number" min={1} max={9999} value={birthParts.year} onChange={(e) => setBirthParts({ ...birthParts, year: e.target.value })} placeholder="Năm" />
-        </div>
-      </div>
-
-      <div>
-        <label className="font-medium block mb-1">Nơi sinh</label>
-        <PlaceCombobox
-          defaultValue={form.birthPlace ?? ""}
-          onChange={(v) => setForm((prev) => ({ ...prev, birthPlace: v }))}
-          suggestions={placeSuggestions}
-        />
-      </div>
-
-      <div className="rounded-lg bg-muted p-3 flex flex-col gap-3 [&_input]:bg-background [&_.combobox-input]:bg-background">
-        <div>
-          <label className="font-medium block mb-1">Ngày mất (Âm lịch)</label>
-          <div className="flex gap-1.5">
-            <Input className="flex-1 min-w-0" type="number" min={1} max={31} value={deathParts.day} onChange={(e) => setDeathParts({ ...deathParts, day: e.target.value })} placeholder="Ngày" />
-            <Input className="flex-1 min-w-0" type="number" min={1} max={12} value={deathParts.month} onChange={(e) => setDeathParts({ ...deathParts, month: e.target.value })} placeholder="Tháng" />
-            <Input className="flex-1 min-w-0" type="number" min={1} max={9999} value={deathParts.year} onChange={(e) => setDeathParts({ ...deathParts, year: e.target.value })} placeholder="Năm" />
+        {/* ── Cơ bản ── */}
+        <TabsContent value="basic" className="flex flex-col gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="font-medium block mb-1">Họ *</label>
+              <Input required value={form.lastName} onChange={set("lastName")} placeholder={clanLastName ?? "Nguyễn"} />
+            </div>
+            <div>
+              <label className="font-medium block mb-1">Đệm</label>
+              <Input value={form.middleName ?? ""} onChange={set("middleName")} placeholder="Văn" />
+            </div>
+            <div>
+              <label className="font-medium block mb-1">Tên *</label>
+              <Input required value={form.firstName} onChange={set("firstName")} placeholder="An" />
+            </div>
           </div>
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Nơi mất</label>
-          <PlaceCombobox
-            defaultValue={form.deathPlace ?? ""}
-            onChange={(v) => setForm((prev) => ({ ...prev, deathPlace: v }))}
-            suggestions={placeSuggestions}
-          />
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="font-medium block mb-1 text-muted-foreground">Đời (thế hệ)</label>
-          <Input
-            type="text"
-            value={form.generation != null ? `Đời ${form.generation}` : ""}
-            disabled
-            placeholder="Tự động tính toán"
-            className="bg-muted text-muted-foreground"
-          />
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Thứ tự con trong gia đình</label>
-          <Input
-            type="number"
-            min={1}
-            value={form.childOrder ?? ""}
-            onChange={(e) =>
-              setForm((prev) => ({
-                ...prev,
-                childOrder: e.target.value ? parseInt(e.target.value) : null,
-              }))
-            }
-            placeholder="VD: 1 (con cả)"
-          />
-        </div>
-      </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="font-medium block mb-1">Giới tính *</label>
+              <Select
+                value={form.gender}
+                onValueChange={(v) => setForm((prev) => ({ ...prev, gender: v as Gender }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Nam</SelectItem>
+                  <SelectItem value="female">Nữ</SelectItem>
+                  <SelectItem value="unknown">Không rõ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <label className="font-medium block mb-1">Thứ tự con trong gia đình</label>
+              <Input
+                type="number"
+                min={1}
+                value={form.childOrder ?? ""}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    childOrder: e.target.value ? parseInt(e.target.value) : null,
+                  }))
+                }
+                placeholder="VD: 1 (con cả)"
+              />
+            </div>
+          </div>
 
-      <div>
-        <label className="font-medium block mb-1">Tiểu sử</label>
-        <Textarea value={form.bio ?? ""} onChange={set("bio")} rows={3} className="resize-none" />
-      </div>
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="font-medium">Thành viên trong dòng họ</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Tắt nếu là Dâu hoặc Rể</p>
+            </div>
+            <Switch
+              checked={form.isClanMember !== false}
+              onCheckedChange={(v) => setForm((prev) => ({ ...prev, isClanMember: v }))}
+            />
+          </div>
+
+          <div>
+            <label className="font-medium block mb-1">Ngày sinh <span className="text-muted-foreground font-normal">(Dương lịch)</span></label>
+            <div className="flex gap-1.5">
+              <Input className="flex-1 min-w-0" type="number" min={1} max={31} value={birthParts.day} onChange={(e) => setBirthParts({ ...birthParts, day: e.target.value })} placeholder="Ngày" />
+              <Input className="flex-1 min-w-0" type="number" min={1} max={12} value={birthParts.month} onChange={(e) => setBirthParts({ ...birthParts, month: e.target.value })} placeholder="Tháng" />
+              <Input className="flex-1 min-w-0" type="number" min={1} max={9999} value={birthParts.year} onChange={(e) => setBirthParts({ ...birthParts, year: e.target.value })} placeholder="Năm" />
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-muted p-3 [&_input]:bg-background">
+            <label className="font-medium block mb-1">Ngày mất (Âm lịch)</label>
+            <div className="flex gap-1.5">
+              <Input className="flex-1 min-w-0" type="number" min={1} max={31} value={deathParts.day} onChange={(e) => setDeathParts({ ...deathParts, day: e.target.value })} placeholder="Ngày" />
+              <Input className="flex-1 min-w-0" type="number" min={1} max={12} value={deathParts.month} onChange={(e) => setDeathParts({ ...deathParts, month: e.target.value })} placeholder="Tháng" />
+              <Input className="flex-1 min-w-0" type="number" min={1} max={9999} value={deathParts.year} onChange={(e) => setDeathParts({ ...deathParts, year: e.target.value })} placeholder="Năm" />
+            </div>
+          </div>
+
+          <div>
+            <label className="font-medium block mb-1 text-muted-foreground">Đời (thế hệ)</label>
+            <Input
+              type="text"
+              value={form.generation != null ? `Đời ${form.generation}` : ""}
+              disabled
+              placeholder="Tự động tính toán"
+              className="bg-muted text-muted-foreground"
+            />
+          </div>
+        </TabsContent>
+
+        {/* ── Địa điểm ── */}
+        <TabsContent value="places" className="flex flex-col gap-4 mt-4">
+          <div>
+            <label className="font-medium block mb-1">Nơi sinh</label>
+            <Input value={form.birthPlace ?? ""} onChange={set("birthPlace")} placeholder="Xã, huyện, tỉnh..." />
+          </div>
+
+          <div>
+            <label className="font-medium block mb-1">Địa chỉ thường trú</label>
+            <Input value={form.currentAddress ?? ""} onChange={set("currentAddress")} placeholder="Xã, huyện, tỉnh..." />
+          </div>
+
+          <div>
+            <label className="font-medium block mb-1">Nơi mất</label>
+            <Input value={form.deathPlace ?? ""} onChange={set("deathPlace")} placeholder="Xã, huyện, tỉnh..." />
+          </div>
+        </TabsContent>
+
+        {/* ── Thông tin khác ── */}
+        <TabsContent value="other" className="flex flex-col gap-4 mt-4">
+          <div>
+            <label className="font-medium block mb-1">Số điện thoại</label>
+            <Input value={form.phone ?? ""} onChange={set("phone")} type="tel" placeholder="0912 345 678" />
+          </div>
+
+          <div>
+            <label className="font-medium block mb-1">Tiểu sử</label>
+            <Textarea value={form.bio ?? ""} onChange={set("bio")} className="resize-none h-32" />
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {!hideButtons && (
         <div className="flex gap-2 pt-2 sm:justify-end">
