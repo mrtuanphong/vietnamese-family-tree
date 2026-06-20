@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     // Guest account — only when public
     if (clan?.enabled && phone === "do" && password === "do") {
-      return NextResponse.json({ granted: true, name: "Khách", canEdit: false });
+      return NextResponse.json({ granted: true, name: "Tài khoản khách", canEdit: false });
     }
 
     if (!clan?.superAdminId) return NextResponse.json({ granted: false });

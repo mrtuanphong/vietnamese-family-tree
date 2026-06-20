@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import ReactFlow, {
   Background,
@@ -12,22 +12,53 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import Link from "next/link";
+import { X } from "lucide-react";
 import { personsApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { buildTreeGraph } from "@/lib/buildTree";
 import PersonNode from "@/components/tree/PersonNode";
+import MarriageHubNode from "@/components/tree/MarriageHubNode";
 import PersonSidebar from "@/components/tree/PersonSidebar";
 import PersonDialog from "@/components/person/PersonDialog";
 import { clanApi } from "@/lib/api";
 import BottomTabBar from "@/components/ui/BottomTabBar";
 import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
 
-const nodeTypes = { personNode: PersonNode };
+function getSubtreeData(
+  rootId: string,
+  persons: Person[],
+  relationships: Relationship[],
+  marriages: Marriage[],
+): FamilyTreeData {
+  const included = new Set<string>([rootId]);
+  const queue = [rootId];
+  while (queue.length) {
+    const curr = queue.shift()!;
+    for (const rel of relationships) {
+      if (rel.parentId === curr && !included.has(rel.childId)) {
+        included.add(rel.childId);
+        queue.push(rel.childId);
+      }
+    }
+  }
+  for (const m of marriages) {
+    if (included.has(m.spouse1Id)) included.add(m.spouse2Id);
+    if (included.has(m.spouse2Id)) included.add(m.spouse1Id);
+  }
+  return {
+    persons: persons.filter((p) => included.has(p.id)),
+    relationships: relationships.filter((r) => included.has(r.parentId) && included.has(r.childId)),
+    marriages: marriages.filter((m) => included.has(m.spouse1Id) && included.has(m.spouse2Id)),
+  };
+}
+
+const nodeTypes = { personNode: PersonNode, marriageHubNode: MarriageHubNode };
 
 type PendingRelation = { type: "spouse" | "child" | "parent"; anchorId: string };
 
 function TreePageContent() {
   const searchParams = useSearchParams();
   const urlSelectedId = searchParams.get("selected");
+  const urlRootId = searchParams.get("root");
 
   const [persons, setPersons] = useState<Person[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
@@ -39,8 +70,9 @@ function TreePageContent() {
   const [showAdd, setShowAdd] = useState(false);
   const [superAdminId, setSuperAdminId] = useState<string | null>(null);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  // null = plain add, non-null = create-then-link
   const [pendingRelation, setPendingRelation] = useState<PendingRelation | null>(null);
+  const [rootPersonId, setRootPersonId] = useState<string | null>(null);
+  const rootPersonIdRef = useRef<string | null>(null);
 
   const load = async () => {
     const [p, r, m] = await Promise.all([
@@ -85,7 +117,14 @@ function TreePageContent() {
       const adminId = clan?.superAdminId ?? null;
       if (adminId) setSuperAdminId(adminId);
       const preselect = urlSelectedId ? p.find((x) => x.id === urlSelectedId) ?? null : null;
-      rebuild({ persons: p, relationships: r, marriages: m }, preselect, adminId);
+      if (urlRootId) {
+        rootPersonIdRef.current = urlRootId;
+        setRootPersonId(urlRootId);
+        const subtree = getSubtreeData(urlRootId, p, r, m);
+        rebuild(subtree, preselect, adminId);
+      } else {
+        rebuild({ persons: p, relationships: r, marriages: m }, preselect, adminId);
+      }
       setInitialLoaded(true);
     });
   }, []);
@@ -112,7 +151,20 @@ function TreePageContent() {
 
   const refresh = async (keepSelected?: Person | null) => {
     const { p, r, m } = await load();
-    rebuild({ persons: p, relationships: r, marriages: m }, keepSelected);
+    const rootId = rootPersonIdRef.current;
+    const data = rootId ? getSubtreeData(rootId, p, r, m) : { persons: p, relationships: r, marriages: m };
+    rebuild(data, keepSelected);
+  };
+
+  const handleSetRoot = (id: string | null) => {
+    rootPersonIdRef.current = id;
+    setRootPersonId(id);
+    setSelected(null);
+    const data = id
+      ? getSubtreeData(id, persons, relationships, marriages)
+      : { persons, relationships, marriages };
+    rebuild(data, null);
+    setTimeout(() => rfInstance?.fitView({ duration: 500, padding: 0.15 }), 50);
   };
 
   // Plain "add person" from header button
@@ -201,9 +253,25 @@ function TreePageContent() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
-      <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center shrink-0">
-        <Link href="/" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700 mr-4">← Danh sách</Link>
+      <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center gap-3 shrink-0">
+        <Link href="/" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
         <h1 className="text-xl font-semibold">Cây gia phả</h1>
+        {rootPersonId && (() => {
+          const rootPerson = persons.find((p) => p.id === rootPersonId);
+          const name = rootPerson ? [rootPerson.lastName, rootPerson.firstName].filter(Boolean).join(" ") : "";
+          return (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 text-sm text-brand-700">
+              <span>Cây từ: <strong>{name}</strong></span>
+              <button
+                onClick={() => handleSetRoot(null)}
+                className="rounded-full hover:bg-brand-100 p-0.5 transition-colors"
+                aria-label="Xem toàn bộ"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          );
+        })()}
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -240,6 +308,7 @@ function TreePageContent() {
             marriages={marriages}
             superAdminId={superAdminId}
             clanLastName={persons.find((p) => p.id === superAdminId)?.lastName ?? null}
+            rootPersonId={rootPersonId}
             onClose={() => setSelected(null)}
             onEdit={(p) => setEditTarget(p)}
             onDelete={handleDeletePerson}
@@ -252,6 +321,7 @@ function TreePageContent() {
             onRemoveParent={handleRemoveParent}
             onRemoveChild={handleRemoveChild}
             onRemoveSpouse={handleRemoveSpouse}
+            onSetRoot={handleSetRoot}
           />
         )}
       </div>

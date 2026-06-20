@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, TreePine, Settings } from "lucide-react";
+import { Users, Network, Settings } from "lucide-react";
 
 const tabs = [
   { href: "/",     label: "Danh sách",   icon: Users },
-  { href: "/tree", label: "Cây gia phả", icon: TreePine },
+  { href: "/tree", label: "Cây gia phả", icon: Network },
   { href: "/clan", label: "Dòng họ",     icon: Settings },
 ];
 

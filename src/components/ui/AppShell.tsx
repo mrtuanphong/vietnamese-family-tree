@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Menu, Users, TreePine, Settings,
+  Menu, Users, Network, Settings,
   Plus, UserPlus, CalendarDays,
   CircleUser, UserCog, Building2,
   Search, LogOut, Lock,
@@ -23,7 +23,7 @@ import {
 
 const navItems = [
   { href: "/",      label: "Danh sách",   exact: true,  icon: Users },
-  { href: "/tree",  label: "Cây gia phả", exact: false, icon: TreePine },
+  { href: "/tree",  label: "Cây gia phả", exact: false, icon: Network },
   { href: "/clan",  label: "Thông tin dòng họ", exact: false, icon: Settings },
 ];
 
@@ -43,19 +43,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [canEdit, setCanEdit] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     setOpen(window.innerWidth >= 768);
+
+    // Read sessionStorage synchronously before any async calls to avoid login flash
+    const granted = sessionStorage.getItem("giapha_access") === "granted";
+    setAccessGranted(granted);
+    if (granted) {
+      setLoggedInName(sessionStorage.getItem("giapha_name") ?? "");
+      setCanEdit(sessionStorage.getItem("giapha_can_edit") === "1");
+    }
+    setMounted(true);
+
     clanApi.get().then((c) => {
       if (c?.name) setClanName(c.name);
     });
     fetch("/api/access").then((r) => r.json()).then((d) => {
       setIsPublic(d.public ?? true);
-      const granted = sessionStorage.getItem("giapha_access") === "granted";
-      setAccessGranted(granted);
-      if (granted) {
-        setLoggedInName(sessionStorage.getItem("giapha_name") ?? "");
-        setCanEdit(sessionStorage.getItem("giapha_can_edit") === "1");
-      }
     });
   }, []);
 
@@ -139,14 +142,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Right actions */}
         <div className="flex items-center gap-1">
 
-          {canEdit && (
+          {canEdit ? (
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-foreground/15 text-primary-foreground/80 shrink-0">
               Super Admin
             </span>
+          ) : (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-foreground/10 text-primary-foreground/60 shrink-0">
+              Tài khoản khách
+            </span>
           )}
 
-          {/* Add dropdown */}
-          <DropdownMenu>
+          {/* Add dropdown — chỉ hiện khi canEdit */}
+          {canEdit && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -176,7 +183,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 Thêm sự kiện
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
 
           {/* Profile dropdown */}
           <DropdownMenu>
@@ -193,17 +200,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <DropdownMenuContent align="end" className="w-60">
               {loggedInName && (
                 <DropdownMenuItem disabled className="gap-3 px-4 py-3">
-                  <CircleUser size={18} className="text-gray-400" />
+                  <CircleUser size={18} className="text-gray-500" />
                   <div className="flex flex-col min-w-0">
-                    <span className="font-medium text-gray-800 truncate">{loggedInName}</span>
-                    <span className="text-xs text-gray-400">Đã đăng nhập</span>
+                    <span className="font-medium text-gray-900 truncate">{loggedInName}</span>
+                    <span className="text-xs text-gray-600">Đã đăng nhập</span>
                   </div>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem disabled className="gap-3 px-4 py-3">
-                <UserCog size={18} className="text-gray-300" />
-                Thông tin cá nhân
-              </DropdownMenuItem>
               {loggedInName && (
                 <DropdownMenuItem
                   className="gap-3 px-4 py-3 cursor-pointer text-red-600 focus:text-red-600"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, User } from "lucide-react";
+import { X, User, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -49,6 +49,8 @@ interface PersonSidebarProps {
   onRemoveParent: (relationshipId: string) => void;
   onRemoveChild: (relationshipId: string) => void;
   onRemoveSpouse: (marriageId: string) => void;
+  rootPersonId?: string | null;
+  onSetRoot: (id: string | null) => void;
 }
 
 function fullName(p: Person) {
@@ -74,6 +76,8 @@ export default function PersonSidebar({
   onRemoveParent,
   onRemoveChild,
   onRemoveSpouse,
+  rootPersonId,
+  onSetRoot,
 }: PersonSidebarProps) {
   const isSuperAdmin = person.id === superAdminId;
   const personMap = new Map(allPersons.map((p) => [p.id, p]));
@@ -214,6 +218,13 @@ export default function PersonSidebar({
           <p className="text-xs text-gray-500">
             {person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Không rõ"}
           </p>
+          <button
+            onClick={() => onSetRoot(rootPersonId === person.id ? null : person.id)}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+          >
+            <Network size={12} />
+            {rootPersonId === person.id ? "Xem toàn bộ" : "Xem cây từ đây"}
+          </button>
           {person.birthDate && (
             <p className="text-xs text-gray-500">
               Sinh: {(() => { const [y, m, d] = person.birthDate.split("-"); return `${d ?? "—"}/${m ?? "—"}/${y === "0001" ? "?" : (y ?? "—")}`; })()} (Dương lịch)

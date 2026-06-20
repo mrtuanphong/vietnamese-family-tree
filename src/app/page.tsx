@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame } from "lucide-react";
+import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame, MoreHorizontal } from "lucide-react";
 import { Lunar } from "lunar-javascript";
 import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
@@ -11,6 +11,8 @@ import BottomTabBar from "@/components/ui/BottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -529,19 +531,51 @@ export default function PeoplePage() {
                     <TableCell className="text-gray-600 text-right hidden sm:table-cell">{dateOf(p.birthDate)}</TableCell>
                     <TableCell className="text-gray-600 text-right hidden sm:table-cell">{dateOf(p.deathDateLunar)}</TableCell>
                     <TableCell className="pl-2 pr-2 py-3">
-                      <div className="flex gap-1.5 justify-end">
-                        <Button variant="outline" size="icon" asChild title="Xem cây">
-                          <Link href={`/tree?selected=${p.id}`}><Network size={16} /></Link>
-                        </Button>
+                      <div className="flex gap-1.5 justify-end items-center">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/tree?selected=${p.id}`} className="flex items-center gap-1.5">
+                                <Network size={14} /><span className="hidden sm:inline">Xem cây</span>
+                              </Link>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Xem người này trong cây tổng thể</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/tree?selected=${p.id}&root=${p.id}`} className="flex items-center gap-1.5">
+                                <User size={14} /><span className="hidden sm:inline">Xem cây từ đây</span>
+                              </Link>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Người này là điểm khởi đầu trong cây</TooltipContent>
+                        </Tooltip>
                         {canEdit && (
-                          <Button variant="outline" size="icon" title="Sửa" onClick={() => setEditTarget(p)}>
-                            <Pencil size={16} />
-                          </Button>
-                        )}
-                        {canEdit && p.id !== superAdminId && (
-                          <Button variant="destructive" size="icon" title="Xoá" onClick={() => handleDelete(p.id)}>
-                            <Trash2 size={16} />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal size={16} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditTarget(p)} className="flex items-center gap-2">
+                                <Pencil size={15} /> Sửa
+                              </DropdownMenuItem>
+                              {p.id !== superAdminId && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(p.id)}
+                                    className="flex items-center gap-2 text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 size={15} /> Xoá
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         )}
                       </div>
                     </TableCell>
