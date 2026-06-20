@@ -149,12 +149,12 @@ function highlightName(name: string, search: string) {
   );
 }
 
-function PersonLabel({ person, superAdminId, search = "" }: { person: Person; superAdminId: string | null; search?: string }) {
+function PersonLabel({ person, superAdminId, search = "", isSelected = false }: { person: Person; superAdminId: string | null; search?: string; isSelected?: boolean }) {
   const name = [person.lastName, person.middleName, person.firstName].filter(Boolean).join(" ");
   const isMatch = !!search && name.toLowerCase().includes(search.toLowerCase());
   return (
     <span className="flex items-center gap-1 min-w-0">
-      <span className={`text-sm font-medium truncate ${isMatch ? "bg-yellow-200 rounded-sm px-0.5" : ""}`}>
+      <span className={`text-sm font-medium truncate ${isSelected ? "underline underline-offset-2" : ""} ${isMatch ? "bg-yellow-200 rounded-sm px-0.5" : ""}`}>
         {highlightName(name, search)}
       </span>
       {person.generation != null && person.isClanMember !== false && (
@@ -223,7 +223,7 @@ function OutlineRow({
           onClick={() => onSelect(primary)}
         >
           <MiniAvatar person={primary} />
-          <PersonLabel person={primary} superAdminId={superAdminId} search={search} />
+          <PersonLabel person={primary} superAdminId={superAdminId} search={search} isSelected={selectedId === primary.id} />
         </div>
         {secondary && (
           <>
@@ -233,7 +233,7 @@ function OutlineRow({
               onClick={() => onSelect(secondary)}
             >
               <MiniAvatar person={secondary} />
-              <PersonLabel person={secondary} superAdminId={superAdminId} search={search} />
+              <PersonLabel person={secondary} superAdminId={superAdminId} search={search} isSelected={selectedId === secondary.id} />
             </div>
           </>
         )}
@@ -241,7 +241,7 @@ function OutlineRow({
           <div key={spouse.id} className="flex items-center gap-1.5 shrink-0 cursor-pointer" onClick={() => onSelect(spouse)}>
             <Heart size={9} className="text-pink-400 shrink-0 mx-1" fill="currentColor" />
             <MiniAvatar person={spouse} />
-            <PersonLabel person={spouse} superAdminId={superAdminId} search={search} />
+            <PersonLabel person={spouse} superAdminId={superAdminId} search={search} isSelected={selectedId === spouse.id} />
           </div>
         ))}
       </div>
