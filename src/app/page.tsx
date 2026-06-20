@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
-import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame, MoreHorizontal } from "lucide-react";
+import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame, MoreHorizontal, Loader2 } from "lucide-react";
 import { Lunar } from "lunar-javascript";
 import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
@@ -52,9 +53,8 @@ function yearOf(d?: string | null) {
   return y === "0001" ? "?" : y;
 }
 
-function outsiderLabel(person: Person, clanLastName: string | null): string | null {
-  if (!clanLastName || !person.lastName) return null;
-  if (person.lastName === clanLastName) return null;
+function outsiderLabel(person: Person): string | null {
+  if (person.isClanMember !== false) return null;
   return person.gender === "female" ? "Dâu" : person.gender === "male" ? "Rể" : "Dâu/Rể";
 }
 
@@ -238,7 +238,7 @@ function OutsiderBadge({ label }: { label: string | null }) {
   );
 }
 
-function FamilyCard({ family, clanLastName }: { family: FamilyUnit; clanLastName: string | null }) {
+function FamilyCard({ family }: { family: FamilyUnit }) {
   const { spouse1, spouse2, children } = family;
   return (
     <Card className="gap-0 py-0">
@@ -250,7 +250,7 @@ function FamilyCard({ family, clanLastName }: { family: FamilyUnit; clanLastName
           >
             <Avatar person={spouse1} />
             <span className="font-semibold truncate">{fullName(spouse1)}</span>
-            <OutsiderBadge label={outsiderLabel(spouse1, clanLastName)} />
+            <OutsiderBadge label={outsiderLabel(spouse1)} />
           </Link>
         )}
         {spouse2 && (
@@ -262,7 +262,7 @@ function FamilyCard({ family, clanLastName }: { family: FamilyUnit; clanLastName
             >
               <Avatar person={spouse2} />
               <span className="font-semibold truncate">{fullName(spouse2)}</span>
-              <OutsiderBadge label={outsiderLabel(spouse2, clanLastName)} />
+              <OutsiderBadge label={outsiderLabel(spouse2)} />
             </Link>
           </>
         )}
@@ -320,12 +320,14 @@ export default function PeoplePage() {
   const [marriages, setMarriages] = useState<Marriage[]>([]);
   const [clanName, setClanName] = useState<string>("Gia Phả Việt Nam");
   const [superAdminId, setSuperAdminId] = useState<string | null>(null);
+  const [clanLastNameSetting, setClanLastNameSetting] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "generation_asc" | "generation_desc" | "name_asc" | "name_desc">("recent");
   const [genFilter, setGenFilter] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("events");
   const [editTarget, setEditTarget] = useState<Person | null>(null);
   const [showAddPerson, setShowAddPerson] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [eventFilter, setEventFilter] = useState<EventFilter>("all");
 
   const load = () =>
@@ -344,27 +346,49 @@ export default function PeoplePage() {
     clanApi.get().then((c) => {
       if (c?.name) setClanName(c.name);
       if (c?.superAdminId) setSuperAdminId(c.superAdminId);
+      setClanLastNameSetting(c?.clanLastName ?? null);
     });
   }, []);
 
   const handleAdd = async (data: Omit<Person, "id">) => {
-    await personsApi.create(data);
-    setShowAddPerson(false);
-    load();
+    const tid = toast.loading("Đang thêm người...");
+    try {
+      await personsApi.create(data);
+      toast.success("Đã thêm người", { id: tid });
+      setShowAddPerson(false);
+      load();
+    } catch {
+      toast.error("Thêm thất bại", { id: tid });
+    }
   };
 
   const handleEdit = async (data: Omit<Person, "id">) => {
     if (!editTarget) return;
-    await personsApi.update(editTarget.id, data);
-    load();
+    const tid = toast.loading("Đang lưu...");
+    try {
+      await personsApi.update(editTarget.id, data);
+      toast.success("Đã lưu", { id: tid });
+      load();
+    } catch {
+      toast.error("Lưu thất bại", { id: tid });
+    }
   };
 
   const handleDelete = async (id: string) => {
     const person = persons.find((p) => p.id === id);
     const name = person ? fullName(person) : "người này";
     if (!confirm(`Xoá "${name}" khỏi dòng họ?`)) return;
-    await personsApi.delete(id);
-    load();
+    setDeletingId(id);
+    const tid = toast.loading(`Đang xoá ${name}...`);
+    try {
+      await personsApi.delete(id);
+      toast.success(`Đã xoá ${name}`, { id: tid });
+      load();
+    } catch {
+      toast.error("Xoá thất bại", { id: tid });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const { canEdit } = useAccess();
@@ -385,15 +409,12 @@ export default function PeoplePage() {
     });
 
   const families = buildFamilies(persons, relationships, marriages);
-  const clanLastName = persons.find((p) => p.id === superAdminId)?.lastName ?? null;
+  const clanLastName = clanLastNameSetting ?? persons.find((p) => p.id === superAdminId)?.lastName ?? null;
   const allEvents = buildEvents(persons);
   const filteredEvents = allEvents.filter((ev) => eventFilter === "all" || ev.category === eventFilter);
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center">
-        <h1 className="text-xl font-semibold">Danh sách</h1>
-      </header>
 
       <main className="px-4 sm:px-6 py-6 pb-20 sm:pb-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
@@ -470,7 +491,6 @@ export default function PeoplePage() {
               </div>
             )}
 
-            <Card className="gap-0 py-0 border-0 shadow-none">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -507,7 +527,7 @@ export default function PeoplePage() {
                         <div className="flex flex-col min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span className="font-medium">{fullName(p)}</span>
-                            <OutsiderBadge label={outsiderLabel(p, clanLastName)} />
+                            <OutsiderBadge label={outsiderLabel(p)} />
                             {p.id === superAdminId && (
                               <span title="Tài khoản Super Admin" className="text-xs px-1.5 py-0.5 bg-brand-100 text-brand-700 rounded font-medium">
                                 SA
@@ -555,8 +575,10 @@ export default function PeoplePage() {
                         {canEdit && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal size={16} />
+                              <Button variant="ghost" size="icon" disabled={deletingId === p.id}>
+                                {deletingId === p.id
+                                  ? <Loader2 size={16} className="animate-spin" />
+                                  : <MoreHorizontal size={16} />}
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -583,7 +605,6 @@ export default function PeoplePage() {
                 ))}
               </TableBody>
             </Table>
-            </Card>
           </>
         </TabsContent>
 
@@ -601,7 +622,7 @@ export default function PeoplePage() {
                 <p className="text-sm text-gray-400 mb-4">{families.length} gia đình</p>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {families.map((f) => (
-                    <FamilyCard key={f.id} family={f} clanLastName={clanLastName} />
+                    <FamilyCard key={f.id} family={f} />
                   ))}
                 </div>
               </>

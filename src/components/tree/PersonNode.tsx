@@ -8,20 +8,18 @@ interface PersonNodeData {
   person: Person;
   isSelected: boolean;
   isSuperAdmin: boolean;
-  clanLastName?: string | null;
   onSelect: (p: Person) => void;
   onAddChild: (personId: string) => void;
 }
 
-function outsiderLabel(person: Person, clanLastName?: string | null): string | null {
-  if (!clanLastName || !person.lastName) return null;
-  if (person.lastName === clanLastName) return null;
+function outsiderLabel(person: Person): string | null {
+  if (person.isClanMember !== false) return null;
   return person.gender === "female" ? "Dâu" : person.gender === "male" ? "Rể" : "Dâu/Rể";
 }
 
 export default function PersonNode({ data }: { data: PersonNodeData }) {
-  const { person, isSelected, isSuperAdmin, clanLastName, onSelect, onAddChild } = data;
-  const outsider = outsiderLabel(person, clanLastName);
+  const { person, isSelected, isSuperAdmin, onSelect, onAddChild } = data;
+  const outsider = outsiderLabel(person);
   const name = [person.lastName, person.middleName, person.firstName].filter(Boolean).join(" ");
   const years = "";
 

@@ -8,15 +8,21 @@ export const clanApi = {
     fetch(`${base}/clan`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
 };
 
+async function json<T>(r: Response): Promise<T> {
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error ?? `HTTP ${r.status}`);
+  return data as T;
+}
+
 export const personsApi = {
-  getAll: (): Promise<Person[]> => fetch(`${base}/persons`).then((r) => r.json()),
-  getOne: (id: string): Promise<Person> => fetch(`${base}/persons/${id}`).then((r) => r.json()),
+  getAll: (): Promise<Person[]> => fetch(`${base}/persons`).then(json<Person[]>),
+  getOne: (id: string): Promise<Person> => fetch(`${base}/persons/${id}`).then(json<Person>),
   create: (data: Omit<Person, "id">): Promise<Person> =>
-    fetch(`${base}/persons`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+    fetch(`${base}/persons`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(json<Person>),
   update: (id: string, data: Partial<Person>): Promise<Person> =>
-    fetch(`${base}/persons/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+    fetch(`${base}/persons/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(json<Person>),
   delete: (id: string): Promise<void> =>
-    fetch(`${base}/persons/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    fetch(`${base}/persons/${id}`, { method: "DELETE" }).then(json<void>),
 };
 
 export const relationshipsApi = {

@@ -12,7 +12,8 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { personsApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { buildTreeGraph } from "@/lib/buildTree";
 import PersonNode from "@/components/tree/PersonNode";
@@ -73,6 +74,20 @@ function TreePageContent() {
   const [pendingRelation, setPendingRelation] = useState<PendingRelation | null>(null);
   const [rootPersonId, setRootPersonId] = useState<string | null>(null);
   const rootPersonIdRef = useRef<string | null>(null);
+  const [isMutating, setIsMutating] = useState(false);
+
+  const mutate = async (loadingMsg: string, successMsg: string, fn: () => Promise<void>) => {
+    setIsMutating(true);
+    const tid = toast.loading(loadingMsg);
+    try {
+      await fn();
+      toast.success(successMsg, { id: tid });
+    } catch {
+      toast.error("Có lỗi xảy ra", { id: tid });
+    } finally {
+      setIsMutating(false);
+    }
+  };
 
   const load = async () => {
     const [p, r, m] = await Promise.all([
@@ -88,7 +103,6 @@ function TreePageContent() {
 
   const rebuild = (data: FamilyTreeData, selectPerson?: Person | null, adminId?: string | null) => {
     const effectiveAdminId = adminId !== undefined ? adminId : superAdminId;
-    const clanLN = data.persons.find((p) => p.id === effectiveAdminId)?.lastName ?? null;
     const { nodes: n, edges: e } = buildTreeGraph(data);
     const selectedId = selectPerson?.id ?? null;
     const withHandlers = n.map((node) => ({
@@ -97,7 +111,6 @@ function TreePageContent() {
         ...node.data,
         isSelected: node.id === selectedId,
         isSuperAdmin: node.id === effectiveAdminId,
-        clanLastName: clanLN,
         onSelect: (person: Person) => setSelected(person),
         onAddChild: (personId: string) => setPendingRelation({ type: "child", anchorId: personId }),
       },
@@ -168,70 +181,83 @@ function TreePageContent() {
   };
 
   // Plain "add person" from header button
-  const handleAddPerson = async (data: Omit<Person, "id">) => {
-    await personsApi.create(data);
-    refresh();
-  };
+  const handleAddPerson = async (data: Omit<Person, "id">) =>
+    mutate("Đang thêm người...", "Đã thêm người", async () => {
+      await personsApi.create(data);
+      await refresh();
+    });
 
-  // Create new person then immediately link
   const handleCreateAndLink = async (data: Omit<Person, "id">) => {
     if (!pendingRelation) return;
-    const newPerson = await personsApi.create(data);
-    if (pendingRelation.type === "spouse") {
-      await marriagesApi.create({ spouse1Id: pendingRelation.anchorId, spouse2Id: newPerson.id });
-    } else if (pendingRelation.type === "child") {
-      await relationshipsApi.create({ parentId: pendingRelation.anchorId, childId: newPerson.id });
-    } else {
-      await relationshipsApi.create({ parentId: newPerson.id, childId: pendingRelation.anchorId });
-    }
-    setPendingRelation(null);
-    refresh(selected);
+    const labels: Record<string, string> = { spouse: "vợ/chồng", child: "con", parent: "cha/mẹ" };
+    return mutate(`Đang thêm ${labels[pendingRelation.type]}...`, `Đã thêm ${labels[pendingRelation.type]}`, async () => {
+      const newPerson = await personsApi.create(data);
+      if (pendingRelation.type === "spouse") {
+        await marriagesApi.create({ spouse1Id: pendingRelation.anchorId, spouse2Id: newPerson.id });
+      } else if (pendingRelation.type === "child") {
+        await relationshipsApi.create({ parentId: pendingRelation.anchorId, childId: newPerson.id });
+      } else {
+        await relationshipsApi.create({ parentId: newPerson.id, childId: pendingRelation.anchorId });
+      }
+      setPendingRelation(null);
+      await refresh(selected);
+    });
   };
 
-  const handleAddParent = async (parentId: string, childId: string) => {
-    await relationshipsApi.create({ parentId, childId });
-    refresh(selected);
-  };
+  const handleAddParent = (parentId: string, childId: string) =>
+    mutate("Đang thêm cha/mẹ...", "Đã thêm cha/mẹ", async () => {
+      await relationshipsApi.create({ parentId, childId });
+      await refresh(selected);
+    });
 
   const handleEditPerson = async (data: Omit<Person, "id">) => {
     if (!editTarget) return;
-    await personsApi.update(editTarget.id, data);
-    refresh(editTarget);
+    return mutate("Đang lưu...", "Đã lưu", async () => {
+      await personsApi.update(editTarget.id, data);
+      await refresh(editTarget);
+    });
   };
 
   const handleDeletePerson = async (id: string) => {
     const person = persons.find((p) => p.id === id);
     const name = person ? [person.lastName, person.firstName].filter(Boolean).join(" ") : "người này";
     if (!confirm(`Xoá "${name}" khỏi dòng họ?`)) return;
-    await personsApi.delete(id);
-    setSelected(null);
-    refresh();
+    await mutate("Đang xoá...", `Đã xoá ${name}`, async () => {
+      await personsApi.delete(id);
+      setSelected(null);
+      await refresh();
+    });
   };
 
-  const handleAddChild = async (parentId: string, childId: string) => {
-    await relationshipsApi.create({ parentId, childId });
-    refresh(selected);
-  };
+  const handleAddChild = (parentId: string, childId: string) =>
+    mutate("Đang thêm con...", "Đã thêm con", async () => {
+      await relationshipsApi.create({ parentId, childId });
+      await refresh(selected);
+    });
 
-  const handleAddSpouse = async (spouse1Id: string, spouse2Id: string) => {
-    await marriagesApi.create({ spouse1Id, spouse2Id });
-    refresh(selected);
-  };
+  const handleAddSpouse = (spouse1Id: string, spouse2Id: string) =>
+    mutate("Đang thêm vợ/chồng...", "Đã thêm vợ/chồng", async () => {
+      await marriagesApi.create({ spouse1Id, spouse2Id });
+      await refresh(selected);
+    });
 
-  const handleRemoveParent = async (relationshipId: string) => {
-    await relationshipsApi.delete(relationshipId);
-    refresh(selected);
-  };
+  const handleRemoveParent = (relationshipId: string) =>
+    mutate("Đang xoá quan hệ...", "Đã xoá", async () => {
+      await relationshipsApi.delete(relationshipId);
+      await refresh(selected);
+    });
 
-  const handleRemoveChild = async (relationshipId: string) => {
-    await relationshipsApi.delete(relationshipId);
-    refresh(selected);
-  };
+  const handleRemoveChild = (relationshipId: string) =>
+    mutate("Đang xoá quan hệ...", "Đã xoá", async () => {
+      await relationshipsApi.delete(relationshipId);
+      await refresh(selected);
+    });
 
-  const handleRemoveSpouse = async (marriageId: string) => {
-    await marriagesApi.delete(marriageId);
-    refresh(selected);
-  };
+  const handleRemoveSpouse = (marriageId: string) =>
+    mutate("Đang xoá quan hệ...", "Đã xoá", async () => {
+      await marriagesApi.delete(marriageId);
+      await refresh(selected);
+    });
 
   const modalTitle = pendingRelation
     ? pendingRelation.type === "spouse"
@@ -255,7 +281,7 @@ function TreePageContent() {
     <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
       <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center gap-3 shrink-0">
         <Link href="/" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
-        <h1 className="text-xl font-semibold">Cây gia phả</h1>
+        {isMutating && <Loader2 size={16} className="animate-spin text-gray-400" />}
         {rootPersonId && (() => {
           const rootPerson = persons.find((p) => p.id === rootPersonId);
           const name = rootPerson ? [rootPerson.lastName, rootPerson.firstName].filter(Boolean).join(" ") : "";
@@ -284,7 +310,7 @@ function TreePageContent() {
             nodeTypes={nodeTypes}
             fitView={!urlSelectedId}
             onInit={setRfInstance}
-            nodesDraggable={false}
+            nodesDraggable={true}
             nodesConnectable={false}
           >
             <Background />
@@ -307,7 +333,6 @@ function TreePageContent() {
             relationships={relationships}
             marriages={marriages}
             superAdminId={superAdminId}
-            clanLastName={persons.find((p) => p.id === superAdminId)?.lastName ?? null}
             rootPersonId={rootPersonId}
             onClose={() => setSelected(null)}
             onEdit={(p) => setEditTarget(p)}
@@ -322,6 +347,7 @@ function TreePageContent() {
             onRemoveChild={handleRemoveChild}
             onRemoveSpouse={handleRemoveSpouse}
             onSetRoot={handleSetRoot}
+            isMutating={isMutating}
           />
         )}
       </div>

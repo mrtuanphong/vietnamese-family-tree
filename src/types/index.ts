@@ -6,6 +6,7 @@ export interface Clan {
   enabled: boolean;
   superAdminId?: string | null;
   superAdminGeneration?: number | null;
+  clanLastName?: string | null;
 }
 
 export type Gender = "male" | "female" | "unknown";
@@ -25,6 +26,7 @@ export interface Person {
   bio?: string | null;
   generation?: number | null;
   childOrder?: number | null;
+  isClanMember?: boolean;
   createdAt?: string;
 }
 

@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, address, description, enabled, superAdminId, superAdminGeneration } = body;
-    const data = { name, address, description, enabled, superAdminId, superAdminGeneration };
+    const { name, address, description, enabled, superAdminId, superAdminGeneration, clanLastName } = body;
+    const data = { name, address, description, enabled, superAdminId, superAdminGeneration, clanLastName };
     const existing = await prisma.clan.findFirst({ orderBy: { createdAt: "asc" } });
     if (!existing) {
       const clan = await prisma.clan.create({ data });

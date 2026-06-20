@@ -23,6 +23,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    await prisma.relationship.deleteMany({ where: { OR: [{ parentId: id }, { childId: id }] } });
+    await prisma.marriage.deleteMany({ where: { OR: [{ spouse1Id: id }, { spouse2Id: id }] } });
     await prisma.person.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e) {

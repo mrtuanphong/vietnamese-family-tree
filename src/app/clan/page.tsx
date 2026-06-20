@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { User } from "lucide-react";
+import { toast } from "sonner";
 import { clanApi, personsApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
 import BottomTabBar from "@/components/ui/BottomTabBar";
@@ -22,6 +23,7 @@ const defaultForm: ClanForm = {
   enabled: true,
   superAdminId: null,
   superAdminGeneration: null,
+  clanLastName: null,
 };
 
 function fullName(p: Person) {
@@ -33,7 +35,6 @@ export default function ClanPage() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const { canEdit } = useAccess();
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function ClanPage() {
           enabled: clan.enabled,
           superAdminId: clan.superAdminId ?? null,
           superAdminGeneration: clan.superAdminGeneration ?? null,
+          clanLastName: clan.clanLastName ?? null,
         });
       }
       setPersons(ps);
@@ -60,12 +62,12 @@ export default function ClanPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const tid = toast.loading("Đang lưu...");
     try {
       await clanApi.upsert(form);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success("Đã lưu thông tin dòng họ", { id: tid });
     } catch (err) {
-      alert("Lỗi khi lưu: " + String(err));
+      toast.error("Lưu thất bại: " + String(err), { id: tid });
     } finally {
       setSaving(false);
     }
@@ -77,15 +79,23 @@ export default function ClanPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center">
-        <h1 className="text-xl font-semibold">Thông tin dòng họ</h1>
-      </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8 pb-24 sm:pb-8">
         <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-5 sm:border sm:rounded-xl sm:p-6">
           <div>
-            <label className="font-medium">Tên dòng họ *</label>
+            <label className="font-medium">Họ của dòng họ *</label>
+            <Input
+              required
+              value={form.clanLastName ?? ""}
+              onChange={(e) => setForm((prev) => ({ ...prev, clanLastName: e.target.value || null }))}
+              placeholder="Chỉ nhập họ, VD: Đỗ / Nguyễn / Phạm /..."
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="font-medium">Tiêu đề *</label>
             <Input
               required
               value={form.name}
@@ -211,9 +221,6 @@ export default function ClanPage() {
             <Button type="submit" disabled={saving} className="w-full">
               {saving ? "Đang lưu..." : "Lưu thông tin"}
             </Button>
-            <span className={`text-sm text-center transition-opacity ${saved ? "opacity-100 text-green-600" : "opacity-0"}`}>
-              ✓ Đã lưu
-            </span>
           </div>
         )}
         </form>

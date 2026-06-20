@@ -5,6 +5,7 @@ import type { Person, Gender } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import PlaceCombobox from "@/components/person/PlaceCombobox";
 
@@ -13,6 +14,7 @@ type PersonFormData = Omit<Person, "id">;
 interface PersonFormProps {
   initial?: Partial<Person>;
   defaultLastName?: string;
+  clanLastName?: string | null;
   placeSuggestions?: string[];
   onSubmit: (data: PersonFormData) => Promise<void>;
   onCancel: () => void;
@@ -70,6 +72,7 @@ function makeEmpty(defaultLastName?: string): PersonFormData {
     bio: "",
     generation: null,
     childOrder: null,
+    isClanMember: true,
     deathDateLunar: null,
   };
 }
@@ -120,7 +123,7 @@ function DatePartsInput({
   );
 }
 
-export default function PersonForm({ initial, defaultLastName, placeSuggestions = [], onSubmit, onCancel, formId, hideButtons, onLoadingChange }: PersonFormProps) {
+export default function PersonForm({ initial, defaultLastName, clanLastName, placeSuggestions = [], onSubmit, onCancel, formId, hideButtons, onLoadingChange }: PersonFormProps) {
   const [form, setForm] = useState<PersonFormData>({ ...makeEmpty(defaultLastName), ...initial });
   const [birthParts, setBirthParts] = useState<DateParts>(() => parseDateParts(initial?.birthDate));
   const [deathParts, setDeathParts] = useState<DateParts>(() =>
@@ -152,7 +155,7 @@ export default function PersonForm({ initial, defaultLastName, placeSuggestions 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className="font-medium block mb-1">Họ *</label>
-          <Input required value={form.lastName} onChange={set("lastName")} placeholder="Nguyễn" />
+          <Input required value={form.lastName} onChange={set("lastName")} placeholder={clanLastName ?? "Nguyễn"} />
         </div>
         <div>
           <label className="font-medium block mb-1">Đệm</label>
@@ -185,6 +188,17 @@ export default function PersonForm({ initial, defaultLastName, placeSuggestions 
           <label className="font-medium block mb-1">Số điện thoại</label>
           <Input value={form.phone ?? ""} onChange={set("phone")} type="tel" placeholder="0912 345 678" />
         </div>
+      </div>
+
+      <div className="flex items-center justify-between py-1">
+        <div>
+          <p className="font-medium">Thành viên trong dòng họ</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Tắt nếu là Dâu hoặc Rể</p>
+        </div>
+        <Switch
+          checked={form.isClanMember !== false}
+          onCheckedChange={(v) => setForm((prev) => ({ ...prev, isClanMember: v }))}
+        />
       </div>
 
       <div>
@@ -236,7 +250,7 @@ export default function PersonForm({ initial, defaultLastName, placeSuggestions 
           />
         </div>
         <div>
-          <label className="font-medium block mb-1">Thứ tự con</label>
+          <label className="font-medium block mb-1">Thứ tự con trong gia đình</label>
           <Input
             type="number"
             min={1}

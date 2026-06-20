@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, User, Network } from "lucide-react";
+import { X, User, Network, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -36,7 +36,6 @@ interface PersonSidebarProps {
   relationships: Relationship[];
   marriages: Marriage[];
   superAdminId: string | null;
-  clanLastName?: string | null;
   onClose: () => void;
   onEdit: (p: Person) => void;
   onDelete: (id: string) => void;
@@ -51,6 +50,7 @@ interface PersonSidebarProps {
   onRemoveSpouse: (marriageId: string) => void;
   rootPersonId?: string | null;
   onSetRoot: (id: string | null) => void;
+  isMutating?: boolean;
 }
 
 function fullName(p: Person) {
@@ -63,7 +63,6 @@ export default function PersonSidebar({
   relationships,
   marriages,
   superAdminId,
-  clanLastName,
   onClose,
   onEdit,
   onDelete,
@@ -78,6 +77,7 @@ export default function PersonSidebar({
   onRemoveSpouse,
   rootPersonId,
   onSetRoot,
+  isMutating = false,
 }: PersonSidebarProps) {
   const isSuperAdmin = person.id === superAdminId;
   const personMap = new Map(allPersons.map((p) => [p.id, p]));
@@ -181,7 +181,10 @@ export default function PersonSidebar({
 
       <div className="fixed bottom-16 left-0 right-0 z-20 max-h-[65vh] rounded-t-2xl shadow-2xl sm:static sm:bottom-auto sm:w-72 sm:max-h-none sm:z-auto sm:rounded-none sm:shadow-none bg-white border-t sm:border-t-0 sm:border-l flex flex-col overflow-y-auto">
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <span className="font-semibold text-sm">Chi tiết</span>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm">Chi tiết</span>
+            {isMutating && <Loader2 size={13} className="animate-spin text-gray-400" />}
+          </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-gray-400 hover:text-gray-600">
             <X size={16} />
           </Button>
@@ -202,7 +205,7 @@ export default function PersonSidebar({
                 SA
               </span>
             )}
-            {clanLastName && person.lastName && person.lastName !== clanLastName && (
+            {person.isClanMember === false && (
               <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-medium shrink-0">
                 {person.gender === "female" ? "Dâu" : person.gender === "male" ? "Rể" : "Dâu/Rể"}
               </span>
@@ -246,14 +249,14 @@ export default function PersonSidebar({
               {parents.map(({ relId, person: p }) => (
                 <li key={relId} className="flex items-center justify-between gap-2">
                   <span className="text-sm">{fullName(p)}</span>
-                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "parent", relId, name: fullName(p) })} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
+                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "parent", relId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
                     <X size={12} />
                   </Button>
                 </li>
               ))}
             </ul>
           )}
-          <Select value={addParentSel} onValueChange={handleAddParent}>
+          <Select value={addParentSel} onValueChange={handleAddParent} disabled={isMutating}>
             <SelectTrigger size="sm" className="mt-2 w-full text-xs">
               <SelectValue placeholder="+ Thêm cha/mẹ" />
             </SelectTrigger>
@@ -272,14 +275,14 @@ export default function PersonSidebar({
               {spouses.map(({ marriageId, person: p }) => (
                 <li key={marriageId} className="flex items-center justify-between gap-2">
                   <span className="text-sm">{fullName(p)}</span>
-                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "spouse", marriageId, name: fullName(p) })} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
+                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "spouse", marriageId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
                     <X size={12} />
                   </Button>
                 </li>
               ))}
             </ul>
           )}
-          <Select value={addSpouseSel} onValueChange={handleAddSpouse}>
+          <Select value={addSpouseSel} onValueChange={handleAddSpouse} disabled={isMutating}>
             <SelectTrigger size="sm" className="mt-2 w-full text-xs">
               <SelectValue placeholder="+ Thêm vợ/chồng" />
             </SelectTrigger>
@@ -298,14 +301,14 @@ export default function PersonSidebar({
               {children.map(({ relId, person: p }) => (
                 <li key={relId} className="flex items-center justify-between gap-2">
                   <span className="text-sm">{fullName(p)}</span>
-                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "child", relId, name: fullName(p) })} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
+                  <Button variant="ghost" size="icon" onClick={() => setPending({ type: "child", relId, name: fullName(p) })} disabled={isMutating} className="h-5 w-5 shrink-0 text-gray-400 hover:text-red-500" title="Xoá quan hệ">
                     <X size={12} />
                   </Button>
                 </li>
               ))}
             </ul>
           )}
-          <Select value={addChildSel} onValueChange={handleAddChild}>
+          <Select value={addChildSel} onValueChange={handleAddChild} disabled={isMutating}>
             <SelectTrigger size="sm" className="mt-2 w-full text-xs">
               <SelectValue placeholder="+ Thêm con" />
             </SelectTrigger>
@@ -318,11 +321,11 @@ export default function PersonSidebar({
         </div>
 
         <div className="px-4 py-3 flex gap-2 mt-auto">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(person)}>
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(person)} disabled={isMutating}>
             Sửa
           </Button>
           {!isSuperAdmin && (
-            <Button variant="destructive" size="sm" onClick={() => onDelete(person.id)}>
+            <Button variant="destructive" size="sm" onClick={() => onDelete(person.id)} disabled={isMutating}>
               Xoá
             </Button>
           )}

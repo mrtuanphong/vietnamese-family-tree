@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { toast } from "sonner";
 import type { Person } from "@/types";
-import { personsApi } from "@/lib/api";
+import { personsApi, clanApi } from "@/lib/api";
 import PersonForm from "@/components/person/PersonForm";
 import {
   Dialog,
@@ -37,10 +36,11 @@ export default function PersonDialog({
   const formId = useId();
   const [loading, setLoading] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
+  const [clanLastName, setClanLastName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    personsApi.getAll().then((persons) => {
+    Promise.all([personsApi.getAll(), clanApi.get()]).then(([persons, clan]) => {
       const places = Array.from(
         new Set(
           persons
@@ -49,6 +49,7 @@ export default function PersonDialog({
         )
       ).sort((a, b) => a.localeCompare(b, "vi"));
       setPlaceSuggestions(places);
+      setClanLastName(clan?.clanLastName ?? null);
     });
   }, [open]);
 
@@ -71,10 +72,10 @@ export default function PersonDialog({
             formId={formId}
             initial={initial}
             defaultLastName={defaultLastName}
+            clanLastName={clanLastName}
             placeSuggestions={placeSuggestions}
             onSubmit={async (data) => {
               await onSubmit(data);
-              toast.success("Đã lưu thành công");
             }}
             onCancel={() => onOpenChange(false)}
             onLoadingChange={setLoading}
