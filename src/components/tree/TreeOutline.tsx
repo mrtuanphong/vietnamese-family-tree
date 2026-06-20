@@ -1,0 +1,370 @@
+"use client";
+
+import { useState, useMemo, useEffect, useRef } from "react";
+import { PlusSquare, MinusSquare, Heart, Star, User } from "lucide-react";
+import LotusIcon from "@/components/icons/LotusIcon";
+import type { Person, Relationship, Marriage } from "@/types";
+
+interface OutlineNode {
+  person: Person;
+  spouses: Person[];
+  children: OutlineNode[];
+}
+
+function buildForest(
+  persons: Person[],
+  relationships: Relationship[],
+  marriages: Marriage[],
+  rootPersonId: string | null
+): OutlineNode[] {
+  const personMap = new Map(persons.map((p) => [p.id, p]));
+  const visited = new Set<string>();
+
+  function buildNode(id: string): OutlineNode | null {
+    if (visited.has(id)) return null;
+    visited.add(id);
+    const person = personMap.get(id);
+    if (!person) return null;
+
+    const spouseIds = marriages
+      .filter((m) => m.spouse1Id === id || m.spouse2Id === id)
+      .map((m) => (m.spouse1Id === id ? m.spouse2Id : m.spouse1Id))
+      .filter((sid) => !visited.has(sid));
+    spouseIds.forEach((sid) => visited.add(sid));
+    const spouses = spouseIds.map((sid) => personMap.get(sid)).filter(Boolean) as Person[];
+
+    const childIds = relationships.filter((r) => r.parentId === id).map((r) => r.childId);
+    const children = (childIds.map((cid) => buildNode(cid)).filter(Boolean) as OutlineNode[])
+      .sort((a, b) => {
+        const ao = a.person.childOrder ?? 999;
+        const bo = b.person.childOrder ?? 999;
+        if (ao !== bo) return ao - bo;
+        return (a.person.generation ?? 0) - (b.person.generation ?? 0);
+      });
+
+    return { person, spouses, children };
+  }
+
+  if (rootPersonId) {
+    const root = buildNode(rootPersonId);
+    return root ? [root] : [];
+  }
+
+  const childIdSet = new Set(relationships.map((r) => r.childId));
+  const rootIds = persons
+    .filter((p) => !childIdSet.has(p.id))
+    .sort((a, b) => (a.generation ?? 0) - (b.generation ?? 0))
+    .map((p) => p.id);
+  return rootIds.map((id) => buildNode(id)).filter(Boolean) as OutlineNode[];
+}
+
+function collectAllIds(nodes: OutlineNode[]): string[] {
+  const ids: string[] = [];
+  function visit(ns: OutlineNode[]) {
+    for (const n of ns) {
+      ids.push(n.person.id);
+      visit(n.children);
+    }
+  }
+  visit(nodes);
+  return ids;
+}
+
+function personName(p: Person) {
+  return [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ").toLowerCase();
+}
+
+function hasDescendantMatch(node: OutlineNode, search: string): boolean {
+  const q = search.toLowerCase();
+  function check(ns: OutlineNode[]): boolean {
+    for (const n of ns) {
+      if (personName(n.person).includes(q)) return true;
+      if (n.spouses.some((s) => personName(s).includes(q))) return true;
+      if (check(n.children)) return true;
+    }
+    return false;
+  }
+  return check(node.children);
+}
+
+function collectIdsUpToDepth(nodes: OutlineNode[], maxDepth: number, depth = 0): string[] {
+  if (depth >= maxDepth) return [];
+  const ids: string[] = [];
+  for (const n of nodes) {
+    ids.push(n.person.id);
+    ids.push(...collectIdsUpToDepth(n.children, maxDepth, depth + 1));
+  }
+  return ids;
+}
+
+function findAncestorPath(nodes: OutlineNode[], targetId: string): string[] {
+  for (const node of nodes) {
+    if (node.person.id === targetId || node.spouses.some((s) => s.id === targetId)) {
+      return [node.person.id];
+    }
+    const childPath = findAncestorPath(node.children, targetId);
+    if (childPath.length > 0) return [node.person.id, ...childPath];
+  }
+  return [];
+}
+
+function collectSubtreeIds(nodes: OutlineNode[], targetId: string): string[] {
+  for (const node of nodes) {
+    if (node.person.id === targetId || node.spouses.some((s) => s.id === targetId)) {
+      return collectAllIds([node]);
+    }
+    const result = collectSubtreeIds(node.children, targetId);
+    if (result.length > 0) return result;
+  }
+  return [];
+}
+
+function MiniAvatar({ person }: { person: Person }) {
+  const deceased = !!person.deathDateLunar;
+  const color =
+    person.gender === "female" ? "bg-pink-100 text-pink-400" : "bg-gray-100 text-gray-500";
+  const lotusColor = person.gender === "female" ? "text-pink-800" : "text-gray-800";
+  return (
+    <div className={`relative shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${color}`}>
+      {deceased ? <LotusIcon size={11} className={lotusColor} /> : <User size={11} />}
+      {person.childOrder === 1 && (
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 flex items-center justify-center">
+          <Star size={6} className="text-white" fill="currentColor" />
+        </span>
+      )}
+    </div>
+  );
+}
+
+function highlightName(name: string, search: string) {
+  if (!search) return <>{name}</>;
+  const idx = name.toLowerCase().indexOf(search.toLowerCase());
+  if (idx === -1) return <>{name}</>;
+  return (
+    <>
+      {name.slice(0, idx)}
+      <mark className="bg-yellow-200 text-inherit rounded-sm not-italic">{name.slice(idx, idx + search.length)}</mark>
+      {name.slice(idx + search.length)}
+    </>
+  );
+}
+
+function PersonLabel({ person, superAdminId, search = "" }: { person: Person; superAdminId: string | null; search?: string }) {
+  const name = [person.lastName, person.middleName, person.firstName].filter(Boolean).join(" ");
+  const isMatch = !!search && name.toLowerCase().includes(search.toLowerCase());
+  return (
+    <span className="flex items-center gap-1 min-w-0">
+      <span className={`text-sm font-medium truncate ${isMatch ? "bg-yellow-200 rounded-sm px-0.5" : ""}`}>
+        {highlightName(name, search)}
+      </span>
+      {person.generation != null && person.isClanMember !== false && (
+        <span className="text-[10px] px-1 py-0.5 bg-brand-100 text-brand-600 rounded font-medium shrink-0 leading-none">
+          Đời {person.generation}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function OutlineRow({
+  node,
+  selectedId,
+  superAdminId,
+  onSelect,
+  expandedIds,
+  onToggle,
+  search = "",
+}: {
+  node: OutlineNode;
+  selectedId: string | null;
+  superAdminId: string | null;
+  onSelect: (p: Person) => void;
+  expandedIds: Set<string>;
+  onToggle: (id: string) => void;
+  search?: string;
+}) {
+  const hasChildren = node.children.length > 0;
+  const expanded = expandedIds.has(node.person.id);
+  const hasHiddenMatch = !expanded && !!search && hasDescendantMatch(node, search);
+
+  const clanSpouse = node.spouses.find((s) => s.isClanMember !== false);
+  const showSpouseFirst = node.person.isClanMember === false && !!clanSpouse;
+  const primary = showSpouseFirst ? clanSpouse! : node.person;
+  const secondary = showSpouseFirst ? node.person : null;
+  const remainingSpouses = showSpouseFirst
+    ? node.spouses.filter((s) => s.id !== clanSpouse!.id)
+    : node.spouses;
+
+  return (
+    <div>
+      <div
+        className={`flex items-center gap-0.5 py-0.5 px-1 rounded-md transition-colors ${
+          selectedId === node.person.id || node.spouses.some((s) => s.id === selectedId)
+            ? "bg-brand-50 ring-1 ring-inset ring-brand-300"
+            : hasHiddenMatch
+            ? "animate-pulse bg-yellow-100 hover:bg-yellow-50"
+            : "hover:bg-gray-100"
+        }`}
+        onDoubleClick={() => {
+          onSelect(primary);
+          if (hasChildren) onToggle(node.person.id);
+        }}
+      >
+        <button
+          onClick={() => hasChildren && onToggle(node.person.id)}
+          className={`shrink-0 w-4 h-4 flex items-center justify-center text-gray-400 rounded transition-transform duration-200 ${
+            hasChildren ? "hover:text-brand-600 cursor-pointer" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          {expanded ? <MinusSquare size={13} strokeWidth={2} /> : <PlusSquare size={13} strokeWidth={2} />}
+        </button>
+        <div
+          className="flex items-center gap-1.5 min-w-0 cursor-pointer"
+          onClick={() => onSelect(primary)}
+        >
+          <MiniAvatar person={primary} />
+          <PersonLabel person={primary} superAdminId={superAdminId} search={search} />
+        </div>
+        {secondary && (
+          <>
+            <Heart size={9} className="text-pink-400 shrink-0 mx-1" fill="currentColor" />
+            <div
+              className="flex items-center gap-1.5 shrink-0 cursor-pointer"
+              onClick={() => onSelect(secondary)}
+            >
+              <MiniAvatar person={secondary} />
+              <PersonLabel person={secondary} superAdminId={superAdminId} search={search} />
+            </div>
+          </>
+        )}
+        {remainingSpouses.map((spouse) => (
+          <div key={spouse.id} className="flex items-center gap-1.5 shrink-0 cursor-pointer" onClick={() => onSelect(spouse)}>
+            <Heart size={9} className="text-pink-400 shrink-0 mx-1" fill="currentColor" />
+            <MiniAvatar person={spouse} />
+            <PersonLabel person={spouse} superAdminId={superAdminId} search={search} />
+          </div>
+        ))}
+      </div>
+      {hasChildren && (
+        <div
+          className={`grid transition-[grid-template-rows] duration-200 ease-in-out ${
+            expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="ml-5 border-l border-gray-200 pl-1.5 space-y-0.5">
+              {node.children.map((child) => (
+                <OutlineRow
+                  key={child.person.id}
+                  node={child}
+                  selectedId={selectedId}
+                  superAdminId={superAdminId}
+                  onSelect={onSelect}
+                  expandedIds={expandedIds}
+                  onToggle={onToggle}
+                  search={search}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function TreeOutline({
+  persons,
+  relationships,
+  marriages,
+  rootPersonId,
+  selectedId,
+  superAdminId,
+  search = "",
+  onSelect,
+}: {
+  persons: Person[];
+  relationships: Relationship[];
+  marriages: Marriage[];
+  rootPersonId: string | null;
+  selectedId: string | null;
+  superAdminId: string | null;
+  search?: string;
+  onSelect: (p: Person) => void;
+}) {
+  const forest = useMemo(
+    () => buildForest(persons, relationships, marriages, rootPersonId),
+    [persons, relationships, marriages, rootPersonId]
+  );
+  const allIds = useMemo(() => collectAllIds(forest), [forest]);
+  const defaultIds = useMemo(() => collectIdsUpToDepth(forest, 3), [forest]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (!initialized.current && defaultIds.length > 0) {
+      initialized.current = true;
+      setExpandedIds(new Set(defaultIds));
+    }
+  }, [defaultIds]);
+
+  const onToggle = (id: string) =>
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const expandAll = () => setExpandedIds(new Set(allIds));
+
+  const expandFromSelected = () => {
+    if (!selectedId) return;
+    const ancestorPath = findAncestorPath(forest, selectedId);
+    const subtreeIds = collectSubtreeIds(forest, selectedId);
+    setExpandedIds(new Set([...ancestorPath, ...subtreeIds]));
+  };
+
+  if (forest.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+        Không có dữ liệu
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-gray-100 shrink-0">
+        <span className="text-xs text-gray-400">Mở rộng:</span>
+        <button
+          onClick={expandAll}
+          className="text-xs font-medium text-brand-600 hover:text-brand-800 transition-colors"
+        >
+          Tất cả
+        </button>
+        <span className="text-gray-300">·</span>
+        <button
+          onClick={expandFromSelected}
+          disabled={!selectedId}
+          className="text-xs font-medium text-brand-600 hover:text-brand-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Từ người đang chọn
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3 select-none space-y-0.5">
+        {forest.map((node) => (
+          <OutlineRow
+            key={node.person.id}
+            node={node}
+            selectedId={selectedId}
+            superAdminId={superAdminId}
+            onSelect={onSelect}
+            expandedIds={expandedIds}
+            onToggle={onToggle}
+            search={search}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

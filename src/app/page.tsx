@@ -537,7 +537,6 @@ export default function PeoplePage() {
                 <TableRow>
                   <TableHead className="pl-2 pr-1 w-8 text-right text-gray-400">#</TableHead>
                   <TableHead className="pl-2 pr-2">Họ tên</TableHead>
-                  <TableHead className="hidden sm:table-cell">Giới tính</TableHead>
                   {hasGenerations && <TableHead className="text-right hidden sm:table-cell">Đời</TableHead>}
                   <TableHead className="text-right hidden sm:table-cell">Ngày sinh</TableHead>
                   <TableHead className="text-right hidden sm:table-cell">Ngày mất (ÂL)</TableHead>
@@ -576,9 +575,6 @@ export default function PeoplePage() {
                           )}
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-gray-600 hidden sm:table-cell">
-                      {p.gender === "male" ? "Nam" : p.gender === "female" ? "Nữ" : "Không rõ"}
                     </TableCell>
                     {hasGenerations && (
                       <TableCell className="text-gray-600 text-right hidden sm:table-cell">
@@ -729,6 +725,11 @@ export default function PeoplePage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium truncate">{fullName(ev.person)}</span>
+                        {ev.person.generation != null && (
+                          <span className="text-xs px-1.5 py-0.5 bg-brand-100 text-brand-600 rounded font-medium shrink-0">
+                            Đời {ev.person.generation}
+                          </span>
+                        )}
                         <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
                           ev.category === "birthday"
                             ? "bg-blue-50 text-blue-600"

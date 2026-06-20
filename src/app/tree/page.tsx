@@ -12,16 +12,19 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import Link from "next/link";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Network, List } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { personsApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { buildTreeGraph } from "@/lib/buildTree";
 import PersonNode from "@/components/tree/PersonNode";
 import MarriageHubNode from "@/components/tree/MarriageHubNode";
 import PersonSidebar from "@/components/tree/PersonSidebar";
+import TreeOutline from "@/components/tree/TreeOutline";
 import PersonDialog from "@/components/person/PersonDialog";
 import { clanApi } from "@/lib/api";
 import BottomTabBar from "@/components/ui/BottomTabBar";
+import { Input } from "@/components/ui/input";
 import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
 
 function getSubtreeData(
@@ -75,6 +78,15 @@ function TreePageContent() {
   const [rootPersonId, setRootPersonId] = useState<string | null>(null);
   const rootPersonIdRef = useRef<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
+  const [viewMode, setViewMode] = useState<"graph" | "outline">("outline");
+  const [outlineSearch, setOutlineSearch] = useState("");
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const outlineMatchCount = outlineSearch
+    ? persons.filter((p) =>
+        [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ")
+          .toLowerCase().includes(outlineSearch.toLowerCase())
+      ).length
+    : 0;
 
   const mutate = async (loadingMsg: string, successMsg: string, fn: () => Promise<void>) => {
     setIsMutating(true);
@@ -111,7 +123,10 @@ function TreePageContent() {
         ...node.data,
         isSelected: node.id === selectedId,
         isSuperAdmin: node.id === effectiveAdminId,
-        onSelect: (person: Person) => setSelected(person),
+        onSelect: (person: Person) => {
+            setHighlightId(person.id);
+            if (window.innerWidth >= 640) setSelected(person);
+          },
         onAddChild: (personId: string) => setPendingRelation({ type: "child", anchorId: personId }),
       },
     }));
@@ -120,6 +135,7 @@ function TreePageContent() {
     if (selectPerson) {
       const fresh = data.persons.find((x) => x.id === selectPerson.id);
       setSelected(fresh ?? null);
+      setHighlightId(fresh?.id ?? null);
     }
   };
 
@@ -150,17 +166,18 @@ function TreePageContent() {
   }, [initialLoaded, rfInstance, urlSelectedId]);
 
   useEffect(() => {
+    const activeId = highlightId ?? selected?.id ?? null;
     setNodes((prev) =>
       prev.map((node) => ({
         ...node,
         data: {
           ...node.data,
-          isSelected: node.id === (selected?.id ?? null),
+          isSelected: node.id === activeId,
           isSuperAdmin: node.id === superAdminId,
         },
       }))
     );
-  }, [selected, superAdminId]);
+  }, [selected, highlightId, superAdminId]);
 
   const refresh = async (keepSelected?: Person | null) => {
     const { p, r, m } = await load();
@@ -298,10 +315,52 @@ function TreePageContent() {
             </div>
           );
         })()}
+        <div className="flex items-center gap-2 shrink-0">
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "graph" | "outline")}>
+            <TabsList>
+              <TabsTrigger value="outline" className="flex items-center gap-1.5">
+                <List size={14} />
+                Đơn giản
+              </TabsTrigger>
+              <TabsTrigger value="graph" className="flex items-center gap-1.5">
+                <Network size={14} />
+                Sơ đồ
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {viewMode === "outline" && (
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Tìm kiếm..."
+                value={outlineSearch}
+                onChange={(e) => setOutlineSearch(e.target.value)}
+                className="h-8 w-36 text-sm"
+              />
+              {outlineSearch && (
+                <span className="text-xs text-gray-500 shrink-0">{outlineMatchCount} kết quả</span>
+              )}
+            </div>
+          )}
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1">
+        <div className={`flex-1 ${viewMode === "outline" ? "flex flex-col" : ""}`}>
+          {viewMode === "outline" ? (
+            <TreeOutline
+              persons={persons}
+              relationships={relationships}
+              marriages={marriages}
+              rootPersonId={rootPersonId}
+              selectedId={highlightId ?? selected?.id ?? null}
+              superAdminId={superAdminId}
+              search={outlineSearch}
+              onSelect={(person) => {
+                setHighlightId(person.id);
+                if (window.innerWidth >= 640) setSelected(person);
+              }}
+            />
+          ) : (
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -317,6 +376,7 @@ function TreePageContent() {
             <Controls />
             <MiniMap />
           </ReactFlow>
+          )}
         </div>
 
         {selected && (
