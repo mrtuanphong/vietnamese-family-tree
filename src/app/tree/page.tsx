@@ -12,7 +12,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import Link from "next/link";
-import { X, Loader2, Network, List, Info } from "lucide-react";
+import { X, Loader2, Network, List, Info, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { personsApi, relationshipsApi, marriagesApi } from "@/lib/api";
@@ -82,6 +82,7 @@ function TreePageContent() {
   const [viewMode, setViewMode] = useState<"graph" | "outline">("outline");
   const [outlineSearch, setOutlineSearch] = useState("");
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { canEdit } = useAccess();
   const outlineMatchCount = outlineSearch
     ? persons.filter((p) =>
@@ -420,13 +421,31 @@ function TreePageContent() {
             onSetRoot={handleSetRoot}
             isMutating={isMutating}
             canEdit={canEdit}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
           />
         ) : (
-          <div className="w-72 h-full border-l bg-white flex items-center justify-center px-6">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Info size={20} className="text-gray-300" />
-              <p className="text-sm text-gray-400 leading-relaxed">Bấm chọn một người trong danh sách để xem thông tin cá nhân.</p>
+          <div
+            className={`h-full border-l bg-white flex flex-col transition-[width,background-color] duration-200 ${sidebarCollapsed ? "w-8 bg-gray-200 cursor-pointer sm:overflow-hidden" : "w-72"}`}
+            onClick={sidebarCollapsed ? () => setSidebarCollapsed(false) : undefined}
+          >
+            <div className={`flex items-center border-b shrink-0 ${sidebarCollapsed ? "flex-col py-3 px-0 justify-center gap-2" : "px-4 py-3 justify-between"}`}>
+              {!sidebarCollapsed && <span className="font-semibold text-sm">Thông tin cá nhân</span>}
+              <button
+                onClick={(e) => { e.stopPropagation(); setSidebarCollapsed((v) => !v); }}
+                className={`h-8 w-8 shrink-0 flex items-center justify-center rounded-md ${sidebarCollapsed ? "text-gray-600 hover:text-gray-800" : "text-gray-400 hover:text-gray-600"}`}
+              >
+                <ChevronRight size={16} className={`transition-transform duration-200 ${sidebarCollapsed ? "rotate-180" : ""}`} />
+              </button>
             </div>
+            {!sidebarCollapsed && (
+              <div className="flex-1 flex items-center justify-center px-6">
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <Info size={20} className="text-gray-300" />
+                  <p className="text-sm text-gray-400 leading-relaxed">Bấm chọn một người trong danh sách để xem thông tin cá nhân.</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

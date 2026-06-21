@@ -52,6 +52,8 @@ interface PersonSidebarProps {
   onSetRoot: (id: string | null) => void;
   isMutating?: boolean;
   canEdit?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 function fullName(p: Person) {
@@ -80,11 +82,15 @@ export default function PersonSidebar({
   onSetRoot,
   isMutating = false,
   canEdit = true,
+  collapsed: collapsedProp,
+  onToggleCollapse,
 }: PersonSidebarProps) {
   const isSuperAdmin = person.id === superAdminId;
   const personMap = new Map(allPersons.map((p) => [p.id, p]));
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsedInternal, setCollapsedInternal] = useState(false);
+  const collapsed = collapsedProp ?? collapsedInternal;
+  const toggleCollapsed = onToggleCollapse ?? (() => setCollapsedInternal((v) => !v));
   const [addParentSel, setAddParentSel] = useState("");
   const [addSpouseSel, setAddSpouseSel] = useState("");
   const [addChildSel, setAddChildSel] = useState("");
@@ -184,7 +190,7 @@ export default function PersonSidebar({
 
       <div
         className={`fixed bottom-16 left-0 right-0 z-20 max-h-[65vh] rounded-t-2xl shadow-2xl sm:static sm:bottom-auto sm:max-h-none sm:h-full sm:z-auto sm:rounded-none sm:shadow-none border-t sm:border-t-0 sm:border-l flex flex-col overflow-y-auto transition-[width,background-color] duration-200 ${collapsed ? "sm:w-8 sm:bg-gray-200 sm:cursor-pointer sm:overflow-hidden" : "sm:w-72 bg-white"}`}
-        onClick={collapsed ? () => setCollapsed(false) : undefined}
+        onClick={collapsed ? toggleCollapsed : undefined}
       >
         <div className={`flex items-center border-b ${collapsed ? "sm:flex-col sm:py-3 sm:px-0 sm:justify-center sm:gap-2 px-4 py-3 justify-between" : "px-4 py-3 justify-between"}`}>
           {!collapsed && (
@@ -197,7 +203,7 @@ export default function PersonSidebar({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setCollapsed((v) => !v)}
+            onClick={toggleCollapsed}
             className={`h-8 w-8 shrink-0 ${collapsed ? "text-gray-600 hover:text-gray-800" : "text-gray-400 hover:text-gray-600"}`}
           >
             <ChevronRight size={16} className={`transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />

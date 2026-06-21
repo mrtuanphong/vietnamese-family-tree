@@ -11,13 +11,17 @@ Toàn bộ thay đổi từ khi khởi tạo dự án đến khi ship mvp-01.
 - Bỏ nút X (đóng), thay bằng toggle collapse/expand (`›` / `‹`)
 - Desktop: collapsed = dải 32px, nền xám, click bất kỳ chỗ → expand
 - Luôn hiển thị trên desktop; khi chưa chọn ai: placeholder icon Info + hướng dẫn
+- **Placeholder cũng có header với toggle** — collapse/expand hoạt động kể cả khi chưa chọn ai
 - Sidebar chiếm đủ chiều cao page content (flush top–bottom) trên cả 2 trang
 
-### Trang Danh sách — Sidebar
-- Click tên người hoặc avatar trong bảng → mở sidebar chi tiết bên phải
-- Hover row: tên đổi màu primary + gạch chân; hover avatar: ring outline
-- Row được chọn: highlight `bg-brand-50` + ring
+### Trang Danh sách — Tab Người — Sidebar
+- Click row → mở sidebar chi tiết bên phải (click lại → deselect)
+- Row được chọn: highlight `bg-brand-50` + ring + tên bold brand
 - Sidebar đầy đủ: xem/sửa quan hệ (admin), "Xem cây từ đây" → navigate sang `/tree`
+
+### Trang Danh sách — Tab Sự kiện — Sidebar
+- Click event card → chọn người + mở sidebar Thông tin cá nhân (không điều hướng sang Cây gia phả)
+- Row đang chọn: highlight `bg-brand-50` + ring + tên bold brand, nhất quán với tab Người
 
 ### Trang Cây gia phả — Layout
 - Sidebar đặt ngoài in-page header → chiếm toàn chiều cao từ dưới app header xuống đáy

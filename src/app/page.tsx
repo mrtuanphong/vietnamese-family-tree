@@ -343,9 +343,10 @@ export default function PeoplePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isMutating, setIsMutating] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const router = useRouter();
   const [eventFilter, setEventFilter] = useState<EventFilter>("all");
-  const [pageSize, setPageSize] = useState<number>(20);
+  const [pageSize, setPageSize] = useState<number>(50);
   const [page, setPage] = useState(1);
 
   const load = () =>
@@ -467,9 +468,9 @@ export default function PeoplePage() {
   const filteredEvents = allEvents.filter((ev) => eventFilter === "all" || ev.category === eventFilter);
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="h-[calc(100vh-56px)] bg-white flex overflow-hidden">
 
-      <main className="flex-1 min-w-0 px-4 sm:px-6 py-6 pb-20 sm:pb-6">
+      <main className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 py-6 pb-20 sm:pb-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="events" className="flex-1">Sự kiện</TabsTrigger>
@@ -529,7 +530,6 @@ export default function PeoplePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="20">20 / trang</SelectItem>
                       <SelectItem value="50">50 / trang</SelectItem>
                       <SelectItem value="100">100 / trang</SelectItem>
                     </SelectContent>
@@ -559,7 +559,6 @@ export default function PeoplePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="20">20 / trang</SelectItem>
                       <SelectItem value="50">50 / trang</SelectItem>
                       <SelectItem value="100">100 / trang</SelectItem>
                     </SelectContent>
@@ -591,24 +590,22 @@ export default function PeoplePage() {
                 {paged.map((p, i) => (
                   <TableRow
                     key={p.id}
-                    className={`group ${selectedPerson?.id === p.id ? "bg-brand-50 ring-1 ring-inset ring-brand-200" : ""}`}
+                    onClick={() => setSelectedPerson(selectedPerson?.id === p.id ? null : p)}
+                    className={`group ${selectedPerson?.id === p.id ? "bg-brand-50 ring-1 ring-inset ring-brand-200 hover:bg-brand-50" : ""}`}
                   >
                     <TableCell className="pl-2 pr-1 py-3 text-right text-xs text-gray-400 w-8">
                       {(safePage - 1) * pageSize + i + 1}
                     </TableCell>
                     <TableCell className="pl-2 pr-2 py-3">
                       <div className="flex items-center gap-3">
-                        <button onClick={() => setSelectedPerson(selectedPerson?.id === p.id ? null : p)} className="cursor-pointer shrink-0 rounded-full hover:ring-2 hover:ring-brand-400 hover:ring-offset-1 transition-shadow">
+                        <span className="shrink-0">
                           <Avatar person={p} size="table" isFirstChild={p.childOrder === 1} />
-                        </button>
+                        </span>
                         <div className="flex flex-col min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <button
-                              onClick={() => setSelectedPerson(selectedPerson?.id === p.id ? null : p)}
-                              className="font-medium text-left cursor-pointer group-hover:text-brand-600 group-hover:underline transition-colors"
-                            >
+                            <span className={`font-medium ${selectedPerson?.id === p.id ? "text-brand-600 font-bold" : ""}`}>
                               {fullName(p)}
-                            </button>
+                            </span>
                             <OutsiderBadge label={outsiderLabel(p)} />
                             {p.id === superAdminId && (
                               <span title="Tài khoản Super Admin" className="text-xs px-1.5 py-0.5 bg-brand-100 text-brand-700 rounded font-medium">
@@ -629,7 +626,7 @@ export default function PeoplePage() {
                     )}
                     <TableCell className="text-gray-600 text-right hidden sm:table-cell">{dateOf(p.birthDate)}</TableCell>
                     <TableCell className="text-gray-600 text-right hidden sm:table-cell">{dateOf(p.deathDateLunar)}</TableCell>
-                    <TableCell className="pl-2 pr-2 py-3">
+                    <TableCell className="pl-2 pr-2 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1.5 justify-end items-center">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -761,46 +758,53 @@ export default function PeoplePage() {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {filteredEvents.map((ev) => (
-                  <Link
-                    key={`${ev.person.id}-${ev.category}`}
-                    href={`/tree?selected=${ev.person.id}`}
-                    className="flex items-center gap-3 px-4 py-3 bg-white border rounded-xl hover:bg-muted/50 transition-colors"
-                  >
-                    <Avatar person={ev.person} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium truncate">{fullName(ev.person)}</span>
-                        {ev.person.generation != null && (
-                          <span className="text-xs px-1.5 py-0.5 bg-brand-100 text-brand-600 rounded font-medium shrink-0">
-                            Đời {ev.person.generation}
+                {filteredEvents.map((ev) => {
+                  const isSelected = selectedPerson?.id === ev.person.id;
+                  return (
+                    <div
+                      key={`${ev.person.id}-${ev.category}`}
+                      onClick={() => setSelectedPerson(isSelected ? null : ev.person)}
+                      className={`flex items-center gap-3 px-4 py-3 border rounded-xl transition-colors cursor-default ${
+                        isSelected
+                          ? "bg-brand-50 ring-1 ring-inset ring-brand-200 hover:bg-brand-50"
+                          : "bg-white hover:bg-muted/50"
+                      }`}
+                    >
+                      <Avatar person={ev.person} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`font-medium truncate ${isSelected ? "text-brand-600 font-bold" : ""}`}>{fullName(ev.person)}</span>
+                          {ev.person.generation != null && (
+                            <span className="text-xs px-1.5 py-0.5 bg-brand-100 text-brand-600 rounded font-medium shrink-0">
+                              Đời {ev.person.generation}
+                            </span>
+                          )}
+                          <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                            ev.category === "birthday"
+                              ? "bg-blue-50 text-blue-600"
+                              : "bg-orange-50 text-orange-600"
+                          }`}>
+                            {ev.category === "birthday"
+                              ? <><Cake size={11} /> Sinh nhật</>
+                              : <><Flame size={11} /> Giỗ</>}
                           </span>
-                        )}
-                        <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                          ev.category === "birthday"
-                            ? "bg-blue-50 text-blue-600"
-                            : "bg-orange-50 text-orange-600"
-                        }`}>
-                          {ev.category === "birthday"
-                            ? <><Cake size={11} /> Sinh nhật</>
-                            : <><Flame size={11} /> Giỗ</>}
-                        </span>
+                        </div>
+                        <span className="text-xs text-gray-400">{ev.displayDate}</span>
                       </div>
-                      <span className="text-xs text-gray-400">{ev.displayDate}</span>
+                      <div className="text-right shrink-0">
+                        {ev.daysUntil === 0 ? (
+                          <span className="text-sm font-semibold text-brand-500">Hôm nay</span>
+                        ) : ev.daysUntil === 1 ? (
+                          <span className="text-sm font-medium text-amber-500">Ngày mai</span>
+                        ) : ev.daysUntil <= 7 ? (
+                          <span className="text-sm font-medium text-amber-400">{ev.daysUntil} ngày</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">{ev.daysUntil} ngày</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      {ev.daysUntil === 0 ? (
-                        <span className="text-sm font-semibold text-brand-500">Hôm nay</span>
-                      ) : ev.daysUntil === 1 ? (
-                        <span className="text-sm font-medium text-amber-500">Ngày mai</span>
-                      ) : ev.daysUntil <= 7 ? (
-                        <span className="text-sm font-medium text-amber-400">{ev.daysUntil} ngày</span>
-                      ) : (
-                        <span className="text-sm text-gray-400">{ev.daysUntil} ngày</span>
-                      )}
-                    </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
@@ -833,13 +837,31 @@ export default function PeoplePage() {
             onSetRoot={(id) => id && router.push(`/tree?selected=${id}&root=${id}`)}
             isMutating={isMutating}
             canEdit={canEdit}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
           />
         ) : (
-          <div className="w-72 h-full border-l bg-white flex items-center justify-center px-6">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Info size={20} className="text-gray-300" />
-              <p className="text-sm text-gray-400 leading-relaxed">Bấm chọn một người trong danh sách để xem thông tin cá nhân.</p>
+          <div
+            className={`h-full border-l bg-white flex flex-col transition-[width,background-color] duration-200 ${sidebarCollapsed ? "w-8 bg-gray-200 cursor-pointer sm:overflow-hidden" : "w-72"}`}
+            onClick={sidebarCollapsed ? () => setSidebarCollapsed(false) : undefined}
+          >
+            <div className={`flex items-center border-b shrink-0 ${sidebarCollapsed ? "flex-col py-3 px-0 justify-center gap-2" : "px-4 py-3 justify-between"}`}>
+              {!sidebarCollapsed && <span className="font-semibold text-sm">Thông tin cá nhân</span>}
+              <button
+                onClick={(e) => { e.stopPropagation(); setSidebarCollapsed((v) => !v); }}
+                className={`h-8 w-8 shrink-0 flex items-center justify-center rounded-md ${sidebarCollapsed ? "text-gray-600 hover:text-gray-800" : "text-gray-400 hover:text-gray-600"}`}
+              >
+                <ChevronRight size={16} className={`transition-transform duration-200 ${sidebarCollapsed ? "rotate-180" : ""}`} />
+              </button>
             </div>
+            {!sidebarCollapsed && (
+              <div className="flex-1 flex items-center justify-center px-6">
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <Info size={20} className="text-gray-300" />
+                  <p className="text-sm text-gray-400 leading-relaxed">Bấm chọn một người trong danh sách để xem thông tin cá nhân.</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

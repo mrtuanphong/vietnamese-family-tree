@@ -46,6 +46,8 @@ Super Admin chỉ có 1 người duy nhất trong hệ thống, không thể b�
 - Mỗi sự kiện: tên người + badge Đời + loại sự kiện (sinh nhật / giỗ) + ngày.
 - Filter chips: **Tất cả / Sinh nhật / Giỗ**.
 - Mặc định mở tab này khi vào trang.
+- Click event card → chọn người, hiện sidebar Thông tin cá nhân bên phải (không chuyển trang).
+- Row đang chọn: highlight `bg-brand-50` + ring + tên bold brand, giống tab Người.
 
 ### 2.2 Tab Người
 - Danh sách dạng bảng: avatar (icon/ảnh), họ tên, Đời, ngày sinh, ngày mất.
@@ -122,8 +124,9 @@ Khi chưa chọn ai: placeholder icon + hướng dẫn.
 - Nút "Xem cây từ đây" / "Xem toàn bộ".
 
 ### Collapse/Expand (Desktop)
-- Nút toggle `›` / `‹` trên header sidebar.
+- Nút toggle `›` / `‹` trên header sidebar — hoạt động kể cả khi chưa chọn ai.
 - Collapsed: dải 32px, nền xám, click bất kỳ chỗ → expand.
+- Placeholder (chưa chọn ai) cũng có header với nút toggle.
 - Không thể đóng hoàn toàn.
 
 ### Tính năng Admin

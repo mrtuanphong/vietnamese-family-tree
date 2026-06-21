@@ -2,77 +2,94 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const features = [
+type BadgeType = "new" | "improved" | "fixed";
+
+interface WhatsNewEntry {
+  date: string;
+  items: { label: string; badge?: BadgeType }[];
+}
+
+const whatsNew: WhatsNewEntry[] = [
   {
-    group: "Xác thực & Phân quyền",
+    date: "22/06/2026",
     items: [
-      "Đăng nhập 1 bấm cho khách (dòng họ công khai)",
-      "Đăng nhập bằng SĐT Super Admin cho tài khoản quản lý",
-      "Tài khoản khách: chỉ xem, ẩn toàn bộ controls chỉnh sửa",
-      "Super Admin: toàn quyền + cấu hình dòng họ",
+      { label: "Tab Sự kiện: click chọn người → mở sidebar Thông tin cá nhân", badge: "new" },
+      { label: "Sidebar collapse/expand kể cả khi chưa chọn ai (placeholder có toggle)", badge: "improved" },
+      { label: "Sidebar Thông tin cá nhân chiếm toàn chiều cao trang", badge: "improved" },
+      { label: "Tab Người: click row mở sidebar thay vì chuyển sang Cây gia phả", badge: "improved" },
     ],
   },
   {
-    group: "Danh sách",
+    date: "21/06/2026",
     items: [
-      "Tab Sự kiện: sinh nhật & giỗ, lịch Âm–Dương, lọc Tất cả/Sinh nhật/Giỗ",
-      "Tab Người: bảng tìm kiếm, lọc Đời, phân trang",
-      "Tab Gia đình: xem theo cặp vợ chồng + con cái",
-      "Avatar theo giới tính; icon hoa sen cho người mất",
-      "Badge ngôi sao cho con cả, badge Dâu/Rể",
+      { label: "Toolbar cây thư mục: Mở rộng tất cả · Mở rộng từ đây · Xem cây từ đây", badge: "new" },
+      { label: "Bấm Xem cây từ đây → tự mở sidebar chi tiết (desktop)", badge: "new" },
+      { label: "Subtree view: mặc định expand 1 cấp con khi chuyển root", badge: "improved" },
+      { label: "Sidebar Chi tiết: bỏ nút X, thêm toggle collapse/expand", badge: "improved" },
+      { label: "Icon hoa sen cho người đã mất trên cả bảng danh sách và cây", badge: "new" },
+      { label: "Badge ngôi sao vàng cho con cả (thứ tự con = 1)", badge: "new" },
+      { label: "Trường Địa chỉ thường trú trong form và chi tiết người", badge: "new" },
+      { label: "Form 3 tab: Cơ bản / Địa điểm / Thông tin khác", badge: "improved" },
+      { label: "Đăng nhập khách 1 bấm cho dòng họ công khai", badge: "new" },
+      { label: "Ẩn toàn bộ controls chỉnh sửa với tài khoản khách", badge: "new" },
     ],
   },
   {
-    group: "Cây phả hệ — Đơn giản",
+    date: "20/06/2026",
     items: [
-      "Cây thư mục phân cấp cha/con, vợ/chồng cùng dòng",
-      "Mở rộng tất cả · Mở rộng từ người đang chọn · Xem cây từ người đang chọn",
-      "Mặc định mở rộng 3 cấp, subtree view mở rộng 1 cấp",
-      "Tìm kiếm + highlight vàng + nhấp nháy báo kết quả ẩn",
-      "Highlight hàng + gạch chân tên người được chọn",
-      "Double-click: chọn + toggle expand",
+      { label: "Badge Dâu/Rể cho thành viên ngoài dòng họ", badge: "new" },
+      { label: "Subtree view: xem cây từ một người cụ thể", badge: "new" },
+      { label: "Actions menu trên mỗi hàng (Admin)", badge: "new" },
     ],
   },
   {
-    group: "Cây phả hệ — Sơ đồ",
+    date: "19/06/2026",
     items: [
-      "Sơ đồ node/edge ReactFlow: drag, zoom, minimap",
-      "Badge Đời, Dâu/Rể, hoa sen, ngôi sao trên node",
-      "Subtree view từ một người",
+      { label: "Tab Sự kiện: sinh nhật & giỗ, lịch Âm–Dương, filter chips", badge: "new" },
+      { label: "Phân quyền: Khách / Admin / Super Admin", badge: "new" },
+      { label: "Thứ tự con (childOrder)", badge: "new" },
+      { label: "Sơ đồ ReactFlow: marriage hub node", badge: "new" },
+      { label: "Tính Đời tự động dựa trên Super Admin làm mốc", badge: "new" },
+      { label: "Chuyển sang PostgreSQL (Neon) + Prisma 7", badge: "new" },
+      { label: "Deploy Vercel, PWA support", badge: "new" },
     ],
   },
   {
-    group: "Chi tiết người",
+    date: "17/06/2026",
     items: [
-      "Họ tên, giới tính, Đời, ngày sinh, địa chỉ, tiểu sử",
-      "Danh sách cha/mẹ, vợ/chồng, con cái",
-      "Collapse/expand sidebar (desktop)",
-      "Tự mở khi chọn người hoặc bấm Xem cây từ đây (desktop)",
-      "Thêm/xoá quan hệ, Sửa/Xoá người (Admin)",
+      { label: "Cây thư mục (TreeOutline): cha/con phân cấp, vợ/chồng cùng dòng", badge: "new" },
+      { label: "Tìm kiếm + highlight + nhấp nháy kết quả đang ẩn", badge: "new" },
+      { label: "Double-click: chọn + toggle expand", badge: "new" },
     ],
   },
   {
-    group: "Form Thêm / Sửa người",
+    date: "16/06/2026",
     items: [
-      "3 tab: Cơ bản — Địa điểm — Thông tin khác",
-      "Trường: họ/đệm/tên, giới tính, thứ tự con, thành viên dòng họ, ngày sinh/mất, nơi sinh/mất, địa chỉ thường trú, SĐT, tiểu sử",
-      "Đời tự động tính dựa trên Super Admin làm mốc",
-    ],
-  },
-  {
-    group: "Dòng họ",
-    items: [
-      "Xem tên, địa chỉ, mô tả, tên họ",
-      "Bật/tắt chế độ công khai (Super Admin)",
-      "Đặt Super Admin + thế hệ gốc",
+      { label: "Sơ đồ ReactFlow: node/edge, drag, zoom, minimap", badge: "new" },
+      { label: "Badge Đời trên node", badge: "new" },
+      { label: "Cấu hình dòng họ: tên, địa chỉ, mô tả, bật/tắt công khai", badge: "new" },
+      { label: "Đặt Super Admin + thế hệ gốc", badge: "new" },
     ],
   },
 ];
+
+const badgeStyle: Record<BadgeType, string> = {
+  new: "bg-brand-100 text-brand-700",
+  improved: "bg-blue-50 text-blue-600",
+  fixed: "bg-orange-50 text-orange-600",
+};
+
+const badgeLabel: Record<BadgeType, string> = {
+  new: "Mới",
+  improved: "Cải tiến",
+  fixed: "Sửa lỗi",
+};
 
 const releases = [
   {
     name: "mvp-01",
     status: "Shipped",
+    date: "19/06/2026",
     items: [
       "Toàn bộ tính năng cơ bản: xem/quản lý gia phả, phân quyền khách/admin",
       "Cây thư mục + Sơ đồ ReactFlow",
@@ -81,9 +98,11 @@ const releases = [
       "PWA support",
     ],
     updates: [
-      "Collapse/expand sidebar Chi tiết (desktop)",
+      "Sidebar luôn hiển thị, chiếm toàn chiều cao, collapse/expand kể cả khi chưa chọn ai",
       "Toolbar 3 actions: Mở rộng tất cả · Mở rộng từ người đang chọn · Xem cây từ người đang chọn",
       "Subtree view tự mở sidebar + expand 1 cấp",
+      "Danh sách: click row mở sidebar thay vì chuyển trang",
+      "Tab Sự kiện: click chọn người → mở sidebar (không chuyển sang Cây gia phả)",
       "Trường Địa chỉ thường trú",
       "Form 3 tab: Cơ bản / Địa điểm / Thông tin khác",
       "Đăng nhập khách 1 bấm (không cần nhập credentials)",
@@ -97,24 +116,30 @@ export default function AboutPage() {
       <h1 className="text-xl font-bold text-gray-900 mb-1">Thông tin phần mềm</h1>
       <p className="text-sm text-gray-500 mb-6">Ứng dụng quản lý gia phả dòng họ</p>
 
-      <Tabs defaultValue="releases">
+      <Tabs defaultValue="features">
         <TabsList className="mb-6">
+          <TabsTrigger value="features">Cập nhật mới</TabsTrigger>
           <TabsTrigger value="releases">Phiên bản</TabsTrigger>
-          <TabsTrigger value="features">Tính năng</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="features" className="space-y-6">
-          {features.map((section) => (
-            <div key={section.group}>
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">{section.group}</h2>
-              <ul className="space-y-1">
-                {section.items.map((item) => (
-                  <li key={item} className="flex gap-2 text-sm text-gray-600">
-                    <span className="text-gray-300 shrink-0 mt-0.5">—</span>
-                    {item}
-                  </li>
+        <TabsContent value="features" className="space-y-8">
+          {whatsNew.map((entry) => (
+            <div key={entry.date} className="flex gap-4">
+              <div className="shrink-0 w-24 pt-0.5">
+                <span className="text-xs text-gray-400 font-mono">{entry.date}</span>
+              </div>
+              <div className="flex-1 space-y-2.5 pb-8 border-b last:border-b-0 last:pb-0">
+                {entry.items.map((item) => (
+                  <div key={item.label} className="flex items-start gap-2">
+                    {item.badge && (
+                      <span className={`text-[0.7rem] font-semibold px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${badgeStyle[item.badge]}`}>
+                        {badgeLabel[item.badge]}
+                      </span>
+                    )}
+                    <span className="text-sm text-gray-700 leading-snug">{item.label}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           ))}
         </TabsContent>
@@ -122,12 +147,13 @@ export default function AboutPage() {
         <TabsContent value="releases" className="space-y-8">
           {releases.map((r) => (
             <div key={r.name}>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-sm font-bold text-gray-900">{r.name}</h2>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
                   {r.status}
                 </span>
               </div>
+              <p className="text-xs text-gray-400 mb-3">{r.date}</p>
 
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Tính năng gốc</h3>
               <ul className="space-y-1 mb-4">
