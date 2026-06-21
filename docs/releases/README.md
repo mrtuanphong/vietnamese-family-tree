@@ -15,7 +15,7 @@ docs/releases/
 
 | Release | Trạng thái | Mô tả |
 |---|---|---|
-| [mvp-01](./mvp-01/prd.md) | Shipped | MVP đầu tiên — xem/quản lý gia phả, phân quyền khách/admin |
+| [mvp-01](./mvp-01/prd.md) · [changelog](./mvp-01/changelog.md) | Shipped | MVP đầu tiên — xem/quản lý gia phả, phân quyền khách/admin |
 
 ## Quy ước
 
