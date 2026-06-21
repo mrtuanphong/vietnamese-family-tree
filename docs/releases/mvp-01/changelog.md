@@ -4,6 +4,37 @@ Toàn bộ thay đổi từ khi khởi tạo dự án đến khi ship mvp-01.
 
 ---
 
+## Cập nhật gần nhất (post-ship)
+
+### Sidebar Thông tin cá nhân
+- Tiêu đề đổi thành "Thông tin cá nhân"
+- Bỏ nút X (đóng), thay bằng toggle collapse/expand (`›` / `‹`)
+- Desktop: collapsed = dải 32px, nền xám, click bất kỳ chỗ → expand
+- Luôn hiển thị trên desktop; khi chưa chọn ai: placeholder icon Info + hướng dẫn
+- Sidebar chiếm đủ chiều cao page content (flush top–bottom) trên cả 2 trang
+
+### Trang Danh sách — Sidebar
+- Click tên người hoặc avatar trong bảng → mở sidebar chi tiết bên phải
+- Hover row: tên đổi màu primary + gạch chân; hover avatar: ring outline
+- Row được chọn: highlight `bg-brand-50` + ring
+- Sidebar đầy đủ: xem/sửa quan hệ (admin), "Xem cây từ đây" → navigate sang `/tree`
+
+### Trang Cây gia phả — Layout
+- Sidebar đặt ngoài in-page header → chiếm toàn chiều cao từ dưới app header xuống đáy
+- Khi bấm "Xem cây từ đây": sidebar tự mở với thông tin người đó (desktop)
+
+### Cây phả hệ — Đơn giản (TreeOutline)
+- Toolbar 3 actions: **Mở rộng tất cả** · **Mở rộng từ người đang chọn** · **Xem cây từ người đang chọn**
+- Subtree view: mặc định expand 1 cấp con, reset expansion khi đổi root
+
+### Trang Về phần mềm (`/about`)
+- Mục mới trong sidebar nav (icon Info)
+- 2 tab: **Phiên bản** (mặc định) + **Tính năng**
+- Phiên bản: danh sách release + tính năng gốc + cập nhật
+- Tính năng: liệt kê theo module
+
+---
+
 ## Xác thực & Phân quyền
 
 - Đăng nhập một lần bấm cho khách (trang công khai)

@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame, MoreHorizontal, Loader2, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { User, Heart, Users, Network, Pencil, Trash2, Cake, Flame, Info, MoreHorizontal, Loader2, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import LotusIcon from "@/components/icons/LotusIcon";
 import { Lunar } from "lunar-javascript";
+import { useRouter } from "next/navigation";
 import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
 import PersonDialog from "@/components/person/PersonDialog";
+import PersonSidebar from "@/components/tree/PersonSidebar";
 import BottomTabBar from "@/components/ui/BottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -339,6 +341,9 @@ export default function PeoplePage() {
   const [editTarget, setEditTarget] = useState<Person | null>(null);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [isMutating, setIsMutating] = useState(false);
+  const router = useRouter();
   const [eventFilter, setEventFilter] = useState<EventFilter>("all");
   const [pageSize, setPageSize] = useState<number>(20);
   const [page, setPage] = useState(1);
@@ -404,6 +409,37 @@ export default function PeoplePage() {
     }
   };
 
+  const mutate = async (fn: () => Promise<void>) => {
+    setIsMutating(true);
+    try { await fn(); await load(); } finally { setIsMutating(false); }
+  };
+
+  const refreshSelected = async (p: Person | null) => {
+    if (!p) return;
+    const fresh = (await personsApi.getAll()).find((x) => x.id === p.id);
+    setSelectedPerson(fresh ?? null);
+  };
+
+  const handleSidebarDelete = async (id: string) => {
+    const person = persons.find((p) => p.id === id);
+    const name = person ? fullName(person) : "người này";
+    if (!confirm(`Xoá "${name}" khỏi dòng họ?`)) return;
+    await mutate(async () => { await personsApi.delete(id); setSelectedPerson(null); });
+  };
+
+  const handleAddParent = (parentId: string, childId: string) =>
+    mutate(async () => { await relationshipsApi.create({ parentId, childId }); });
+  const handleAddChild = (parentId: string, childId: string) =>
+    mutate(async () => { await relationshipsApi.create({ parentId, childId }); });
+  const handleAddSpouse = (s1: string, s2: string) =>
+    mutate(async () => { await marriagesApi.create({ spouse1Id: s1, spouse2Id: s2 }); });
+  const handleRemoveParent = (id: string) =>
+    mutate(() => relationshipsApi.delete(id));
+  const handleRemoveChild = (id: string) =>
+    mutate(() => relationshipsApi.delete(id));
+  const handleRemoveSpouse = (id: string) =>
+    mutate(() => marriagesApi.delete(id));
+
   const { canEdit } = useAccess();
   const hasGenerations = persons.some((p) => p.generation != null);
   const generations = Array.from(
@@ -431,9 +467,9 @@ export default function PeoplePage() {
   const filteredEvents = allEvents.filter((ev) => eventFilter === "all" || ev.category === eventFilter);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex">
 
-      <main className="px-4 sm:px-6 py-6 pb-20 sm:pb-6">
+      <main className="flex-1 min-w-0 px-4 sm:px-6 py-6 pb-20 sm:pb-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="events" className="flex-1">Sự kiện</TabsTrigger>
@@ -553,16 +589,26 @@ export default function PeoplePage() {
                   </TableRow>
                 )}
                 {paged.map((p, i) => (
-                  <TableRow key={p.id}>
+                  <TableRow
+                    key={p.id}
+                    className={`group ${selectedPerson?.id === p.id ? "bg-brand-50 ring-1 ring-inset ring-brand-200" : ""}`}
+                  >
                     <TableCell className="pl-2 pr-1 py-3 text-right text-xs text-gray-400 w-8">
                       {(safePage - 1) * pageSize + i + 1}
                     </TableCell>
                     <TableCell className="pl-2 pr-2 py-3">
                       <div className="flex items-center gap-3">
-                        <Avatar person={p} size="table" isFirstChild={p.childOrder === 1} />
+                        <button onClick={() => setSelectedPerson(selectedPerson?.id === p.id ? null : p)} className="cursor-pointer shrink-0 rounded-full hover:ring-2 hover:ring-brand-400 hover:ring-offset-1 transition-shadow">
+                          <Avatar person={p} size="table" isFirstChild={p.childOrder === 1} />
+                        </button>
                         <div className="flex flex-col min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <span className="font-medium">{fullName(p)}</span>
+                            <button
+                              onClick={() => setSelectedPerson(selectedPerson?.id === p.id ? null : p)}
+                              className="font-medium text-left cursor-pointer group-hover:text-brand-600 group-hover:underline transition-colors"
+                            >
+                              {fullName(p)}
+                            </button>
                             <OutsiderBadge label={outsiderLabel(p)} />
                             {p.id === superAdminId && (
                               <span title="Tài khoản Super Admin" className="text-xs px-1.5 py-0.5 bg-brand-100 text-brand-700 rounded font-medium">
@@ -762,6 +808,41 @@ export default function PeoplePage() {
 
       </Tabs>
       </main>
+
+      <div className="hidden sm:flex shrink-0">
+        {selectedPerson ? (
+          <PersonSidebar
+            person={selectedPerson}
+            allPersons={persons}
+            relationships={relationships}
+            marriages={marriages}
+            superAdminId={superAdminId}
+            onClose={() => setSelectedPerson(null)}
+            onEdit={(p) => setEditTarget(p)}
+            onDelete={handleSidebarDelete}
+            onAddParent={handleAddParent}
+            onAddChild={handleAddChild}
+            onAddSpouse={handleAddSpouse}
+            onCreateAndAddParent={() => {}}
+            onCreateAndAddChild={() => {}}
+            onCreateAndAddSpouse={() => {}}
+            onRemoveParent={handleRemoveParent}
+            onRemoveChild={handleRemoveChild}
+            onRemoveSpouse={handleRemoveSpouse}
+            rootPersonId={null}
+            onSetRoot={(id) => id && router.push(`/tree?selected=${id}&root=${id}`)}
+            isMutating={isMutating}
+            canEdit={canEdit}
+          />
+        ) : (
+          <div className="w-72 h-full border-l bg-white flex items-center justify-center px-6">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Info size={20} className="text-gray-300" />
+              <p className="text-sm text-gray-400 leading-relaxed">Bấm chọn một người trong danh sách để xem thông tin cá nhân.</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       <PersonDialog
         open={showAddPerson}

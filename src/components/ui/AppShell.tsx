@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Menu, Users, Network, Settings,
+  Menu, Users, Network, Settings, Info,
   Plus, UserPlus, CalendarDays,
   CircleUser, UserCog, Building2,
   LogOut, Lock,
@@ -22,9 +22,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const navItems = [
-  { href: "/",      label: "Danh sách",   exact: true,  icon: Users },
-  { href: "/tree",  label: "Cây gia phả", exact: false, icon: Network },
-  { href: "/clan",  label: "Thông tin dòng họ", exact: false, icon: Settings },
+  { href: "/",       label: "Danh sách",         exact: true,  icon: Users },
+  { href: "/tree",   label: "Cây gia phả",        exact: false, icon: Network },
+  { href: "/clan",   label: "Thông tin dòng họ",  exact: false, icon: Settings },
+  { href: "/about",  label: "Về phần mềm",        exact: false, icon: Info },
 ];
 
 const HEADER_H = 56;
@@ -68,7 +69,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (pathname === "/") return "Danh sách";
     if (pathname.startsWith("/tree")) return "Cây gia phả";
     if (pathname.startsWith("/clan")) return "Thông tin dòng họ";
-if (pathname.startsWith("/person")) return "Chi tiết";
+    if (pathname.startsWith("/about")) return "Về phần mềm";
+    if (pathname.startsWith("/person")) return "Chi tiết";
     return "";
   })();
 

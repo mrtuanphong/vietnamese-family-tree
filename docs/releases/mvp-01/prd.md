@@ -53,7 +53,9 @@ Super Admin chỉ có 1 người duy nhất trong hệ thống, không thể b�
 - Lọc theo Đời.
 - Sắp xếp: theo tên, theo Đời, theo ngày sinh.
 - Phân trang (10 / 25 / 50 / 100 / tất cả).
-- Bấm vào người → mở trang chi tiết (link sang cây phả hệ với người đó được chọn).
+- Click tên người hoặc avatar → mở sidebar Thông tin cá nhân bên phải (desktop).
+- Hover row: tên đổi màu primary + gạch chân; hover avatar: ring outline.
+- Row được chọn: highlight brand.
 - **Admin:** nút "+ Thêm người" ở đầu bảng + nút Sửa trên mỗi hàng.
 
 ### 2.3 Tab Gia đình
@@ -83,9 +85,10 @@ Hai chế độ chuyển đổi bằng tab:
 - Badge Đời chỉ hiện với người trong dòng họ.
 - Icon +/− để mở rộng / thu gọn nhánh.
 - Mặc định mở rộng 3 cấp đầu khi load.
-- **Expand controls:**
-  - "Mở rộng: Tất cả" — mở rộng toàn bộ cây.
-  - "Mở rộng: Từ người đang chọn" — mở rộng nhánh từ người đang chọn (gồm tổ tiên + toàn bộ con cháu).
+- **Toolbar actions** (disabled khi chưa chọn ai với action liên quan đến người):
+  - "Mở rộng tất cả" — mở rộng toàn bộ cây.
+  - "Mở rộng từ người đang chọn" — mở rộng nhánh từ người đang chọn (tổ tiên + toàn bộ con cháu).
+  - "Xem cây từ người đang chọn" — chuyển sang subtree view, tự mở sidebar chi tiết (desktop).
 - Tìm kiếm: ô tìm kiếm + hiển thị số kết quả + highlight vàng tên trùng khớp.
 - Khi kết quả tìm kiếm bị ẩn (nhánh đang thu gọn): hàng cha nhấp nháy nền vàng báo hiệu.
 - Chọn người: highlight hàng bằng ring màu primary + gạch chân tên người được chọn.
@@ -105,9 +108,10 @@ Hai chế độ chuyển đổi bằng tab:
 
 ---
 
-## 4. Chi tiết người (PersonSidebar)
+## 4. Chi tiết người (PersonSidebar — "Thông tin cá nhân")
 
-Hiển thị khi chọn một người trên cây (desktop) hoặc từ danh sách.
+Luôn hiển thị trên desktop bên phải, chiếm toàn chiều cao page content.  
+Khi chưa chọn ai: placeholder icon + hướng dẫn.
 
 ### Thông tin hiển thị (tất cả vai trò)
 - Họ tên đầy đủ, giới tính, badge Đời, badge Dâu/Rể.
@@ -116,6 +120,11 @@ Hiển thị khi chọn một người trên cây (desktop) hoặc từ danh sá
 - Tiểu sử.
 - Danh sách cha/mẹ, vợ/chồng, con cái (chỉ đọc với khách).
 - Nút "Xem cây từ đây" / "Xem toàn bộ".
+
+### Collapse/Expand (Desktop)
+- Nút toggle `›` / `‹` trên header sidebar.
+- Collapsed: dải 32px, nền xám, click bất kỳ chỗ → expand.
+- Không thể đóng hoàn toàn.
 
 ### Tính năng Admin
 - Nút Sửa / Xoá người.
@@ -154,9 +163,17 @@ Ba tab:
 
 ---
 
-## 7. Điều hướng
+## 7. Trang Về phần mềm (`/about`)
 
-- **Desktop:** sidebar trái cố định (logo + nav items).
+- Mục trong sidebar nav (icon Info).
+- Tab **Phiên bản** (mặc định): danh sách release + tính năng gốc + changelog.
+- Tab **Tính năng**: liệt kê toàn bộ tính năng theo module.
+
+---
+
+## 8. Điều hướng
+
+- **Desktop:** sidebar trái cố định (logo + nav items: Danh sách, Cây gia phả, Thông tin dòng họ, Về phần mềm).
 - **Mobile:** bottom tab bar (Danh sách / Cây / Dòng họ).
 - Tên người dùng + badge vai trò (Tài khoản khách / SA) hiển thị trên header.
 - Nút Đăng xuất trên header.
@@ -164,7 +181,7 @@ Ba tab:
 
 ---
 
-## 8. Dữ liệu & Kỹ thuật
+## 9. Dữ liệu & Kỹ thuật
 
 | Hạng mục | Chi tiết |
 |---|---|
@@ -183,7 +200,7 @@ Ba tab:
 
 ---
 
-## 9. Ngoài phạm vi mvp-01
+## 10. Ngoài phạm vi mvp-01
 
 - Upload ảnh thực sự (photoUrl có field nhưng chưa có UI upload).
 - Xem thống kê / biểu đồ dòng họ.

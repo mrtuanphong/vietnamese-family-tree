@@ -12,7 +12,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import Link from "next/link";
-import { X, Loader2, Network, List } from "lucide-react";
+import { X, Loader2, Network, List, Info } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { personsApi, relationshipsApi, marriagesApi } from "@/lib/api";
@@ -191,7 +191,10 @@ function TreePageContent() {
   const handleSetRoot = (id: string | null) => {
     rootPersonIdRef.current = id;
     setRootPersonId(id);
-    setSelected(null);
+    const rootPerson = id ? (persons.find((p) => p.id === id) ?? null) : null;
+    if (window.innerWidth >= 640) setSelected(rootPerson);
+    else setSelected(null);
+    setHighlightId(id);
     const data = id
       ? getSubtreeData(id, persons, relationships, marriages)
       : { persons, relationships, marriages };
@@ -297,7 +300,8 @@ function TreePageContent() {
     : undefined;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
+    <div className="flex h-[calc(100vh-56px)] bg-white">
+      <div className="flex flex-col flex-1 overflow-hidden">
       <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center gap-3 shrink-0">
         <Link href="/" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
         {isMutating && <Loader2 size={16} className="animate-spin text-gray-400" />}
@@ -361,6 +365,7 @@ function TreePageContent() {
                 setHighlightId(person.id);
                 if (window.innerWidth >= 640) setSelected(person);
               }}
+              onSetRoot={handleSetRoot}
             />
           ) : (
           <ReactFlow
@@ -380,15 +385,19 @@ function TreePageContent() {
           </ReactFlow>
           )}
         </div>
+      </div>{/* end flex-1 overflow-hidden row */}
 
-        {selected && (
-          <div
-            className="fixed inset-0 bg-black/30 z-10 sm:hidden"
-            onClick={() => setSelected(null)}
-          />
-        )}
+      </div>{/* end inner flex-col */}
 
-        {selected && (
+      {selected && (
+        <div
+          className="fixed inset-0 bg-black/30 z-10 sm:hidden"
+          onClick={() => setSelected(null)}
+        />
+      )}
+
+      <div className="hidden sm:flex shrink-0">
+        {selected ? (
           <PersonSidebar
             person={selected}
             allPersons={persons}
@@ -412,6 +421,13 @@ function TreePageContent() {
             isMutating={isMutating}
             canEdit={canEdit}
           />
+        ) : (
+          <div className="w-72 h-full border-l bg-white flex items-center justify-center px-6">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Info size={20} className="text-gray-300" />
+              <p className="text-sm text-gray-400 leading-relaxed">Bấm chọn một người trong danh sách để xem thông tin cá nhân.</p>
+            </div>
+          </div>
         )}
       </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, User, Network, Loader2 } from "lucide-react";
+import { ChevronRight, X, User, Network, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -84,6 +84,7 @@ export default function PersonSidebar({
   const isSuperAdmin = person.id === superAdminId;
   const personMap = new Map(allPersons.map((p) => [p.id, p]));
 
+  const [collapsed, setCollapsed] = useState(false);
   const [addParentSel, setAddParentSel] = useState("");
   const [addSpouseSel, setAddSpouseSel] = useState("");
   const [addChildSel, setAddChildSel] = useState("");
@@ -181,18 +182,29 @@ export default function PersonSidebar({
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="fixed bottom-16 left-0 right-0 z-20 max-h-[65vh] rounded-t-2xl shadow-2xl sm:static sm:bottom-auto sm:w-72 sm:max-h-none sm:z-auto sm:rounded-none sm:shadow-none bg-white border-t sm:border-t-0 sm:border-l flex flex-col overflow-y-auto">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">Chi tiết</span>
-            {isMutating && <Loader2 size={13} className="animate-spin text-gray-400" />}
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-gray-400 hover:text-gray-600">
-            <X size={16} />
+      <div
+        className={`fixed bottom-16 left-0 right-0 z-20 max-h-[65vh] rounded-t-2xl shadow-2xl sm:static sm:bottom-auto sm:max-h-none sm:h-full sm:z-auto sm:rounded-none sm:shadow-none border-t sm:border-t-0 sm:border-l flex flex-col overflow-y-auto transition-[width,background-color] duration-200 ${collapsed ? "sm:w-8 sm:bg-gray-200 sm:cursor-pointer sm:overflow-hidden" : "sm:w-72 bg-white"}`}
+        onClick={collapsed ? () => setCollapsed(false) : undefined}
+      >
+        <div className={`flex items-center border-b ${collapsed ? "sm:flex-col sm:py-3 sm:px-0 sm:justify-center sm:gap-2 px-4 py-3 justify-between" : "px-4 py-3 justify-between"}`}>
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm">Thông tin cá nhân</span>
+              {isMutating && <Loader2 size={13} className="animate-spin text-gray-400" />}
+            </div>
+          )}
+          {collapsed && isMutating && <Loader2 size={13} className="animate-spin text-gray-400 hidden sm:block" />}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed((v) => !v)}
+            className={`h-8 w-8 shrink-0 ${collapsed ? "text-gray-600 hover:text-gray-800" : "text-gray-400 hover:text-gray-600"}`}
+          >
+            <ChevronRight size={16} className={`transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
           </Button>
         </div>
 
-        <div className="p-4 flex flex-col items-center gap-2 border-b">
+        <div className={`${collapsed ? "sm:hidden" : ""} p-4 flex flex-col items-center gap-2 border-b`}>
           <span className={`w-[72px] h-[72px] rounded-full flex items-center justify-center shrink-0 ${
             person.gender === "female" ? "bg-pink-100 text-pink-400"
             : person.gender === "male" ? "bg-gray-100 text-gray-500"
@@ -236,6 +248,8 @@ export default function PersonSidebar({
             </p>
           )}
         </div>
+
+        <div className={collapsed ? "sm:hidden" : ""}>
 
         {person.currentAddress && (
           <div className="px-4 py-3 border-b">
@@ -335,6 +349,8 @@ export default function PersonSidebar({
             )}
           </div>
         )}
+
+        </div>{/* end collapsed wrapper */}
       </div>
     </>
   );

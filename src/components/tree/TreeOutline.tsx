@@ -282,6 +282,7 @@ export default function TreeOutline({
   superAdminId,
   search = "",
   onSelect,
+  onSetRoot,
 }: {
   persons: Person[];
   relationships: Relationship[];
@@ -291,21 +292,25 @@ export default function TreeOutline({
   superAdminId: string | null;
   search?: string;
   onSelect: (p: Person) => void;
+  onSetRoot?: (id: string | null) => void;
 }) {
   const forest = useMemo(
     () => buildForest(persons, relationships, marriages, rootPersonId),
     [persons, relationships, marriages, rootPersonId]
   );
   const allIds = useMemo(() => collectAllIds(forest), [forest]);
-  const defaultIds = useMemo(() => collectIdsUpToDepth(forest, 3), [forest]);
+  const defaultIds = useMemo(
+    () => collectIdsUpToDepth(forest, rootPersonId ? 1 : 3),
+    [forest, rootPersonId]
+  );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const initialized = useRef(false);
+  const initialized = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    if (!initialized.current && defaultIds.length > 0) {
-      initialized.current = true;
+    if (initialized.current !== rootPersonId && defaultIds.length > 0) {
+      initialized.current = rootPersonId;
       setExpandedIds(new Set(defaultIds));
     }
-  }, [defaultIds]);
+  }, [defaultIds, rootPersonId]);
 
   const onToggle = (id: string) =>
     setExpandedIds((prev) => {
@@ -334,13 +339,12 @@ export default function TreeOutline({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-gray-100 shrink-0">
-        <span className="text-xs text-gray-400">Mở rộng:</span>
+      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-gray-100 shrink-0 flex-wrap">
         <button
           onClick={expandAll}
           className="text-xs font-medium text-brand-600 hover:text-brand-800 transition-colors"
         >
-          Tất cả
+          Mở rộng tất cả
         </button>
         <span className="text-gray-300">·</span>
         <button
@@ -348,7 +352,15 @@ export default function TreeOutline({
           disabled={!selectedId}
           className="text-xs font-medium text-brand-600 hover:text-brand-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Từ người đang chọn
+          Mở rộng từ người đang chọn
+        </button>
+        <span className="text-gray-300">·</span>
+        <button
+          onClick={() => onSetRoot?.(selectedId)}
+          disabled={!selectedId || !onSetRoot}
+          className="text-xs font-medium text-brand-600 hover:text-brand-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Xem cây từ người đang chọn
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-3 select-none space-y-0.5">
