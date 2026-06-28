@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { PlusSquare, MinusSquare, Heart, Star, User } from "lucide-react";
 import LotusIcon from "@/components/icons/LotusIcon";
 import type { Person, Relationship, Marriage } from "@/types";
@@ -205,7 +205,7 @@ function OutlineRow({
   return (
     <div data-person-id={node.person.id}>
       <div
-        className={`flex items-center gap-0.5 py-1 px-1 rounded-md transition-colors ${
+        className={`flex items-center gap-0.5 py-0.5 px-1 rounded-md transition-colors ${
           rowActive
             ? "bg-brand-50"
             : hasHiddenMatch
@@ -241,11 +241,13 @@ function OutlineRow({
           </>
         )}
         {remainingSpouses.map((spouse) => (
-          <div key={spouse.id} className={personChipClass(spouse.id)} onClick={() => onSelect(spouse)}>
+          <React.Fragment key={spouse.id}>
             <Heart size={9} className="text-pink-400 shrink-0 mx-1" fill="currentColor" />
-            <MiniAvatar person={spouse} />
-            <PersonLabel person={spouse} superAdminId={superAdminId} search={search} isSelected={selectedId === spouse.id} rowActive={selectedId === spouse.id} />
-          </div>
+            <div className={personChipClass(spouse.id)} onClick={() => onSelect(spouse)}>
+              <MiniAvatar person={spouse} />
+              <PersonLabel person={spouse} superAdminId={superAdminId} search={search} isSelected={selectedId === spouse.id} rowActive={selectedId === spouse.id} />
+            </div>
+          </React.Fragment>
         ))}
       </div>
       {hasChildren && (
