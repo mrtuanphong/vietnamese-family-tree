@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { PlusSquare, MinusSquare, Heart, Star, User } from "lucide-react";
 import LotusIcon from "@/components/icons/LotusIcon";
+import { Input } from "@/components/ui/input";
 import type { Person, Relationship, Marriage } from "@/types";
 
 interface OutlineNode {
@@ -286,6 +287,7 @@ export default function TreeOutline({
   selectedId,
   superAdminId,
   search = "",
+  onSearchChange,
   onSelect,
   onSetRoot,
   initialExpandSelected = false,
@@ -297,6 +299,7 @@ export default function TreeOutline({
   selectedId: string | null;
   superAdminId: string | null;
   search?: string;
+  onSearchChange?: (v: string) => void;
   onSelect: (p: Person) => void;
   onSetRoot?: (id: string | null) => void;
   initialExpandSelected?: boolean;
@@ -383,6 +386,24 @@ export default function TreeOutline({
         >
           Xem cây từ người đang chọn
         </button>
+        {onSearchChange && (
+          <div className="flex items-center gap-1.5 ml-auto">
+            {search && (
+              <span className="text-xs text-gray-400">
+                {persons.filter((p) => {
+                  const name = [p.lastName || "—", p.middleName, p.firstName].filter(Boolean).join(" ");
+                  return name.toLowerCase().includes(search.toLowerCase());
+                }).length} kết quả
+              </span>
+            )}
+            <Input
+              placeholder="Tìm kiếm..."
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="h-7 w-28 text-xs"
+            />
+          </div>
+        )}
       </div>
       <div ref={scrollContainerRef} className="flex-1 overflow-auto p-3 select-none space-y-0.5">
         <div className="min-w-max">

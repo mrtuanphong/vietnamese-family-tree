@@ -24,7 +24,6 @@ import TreeOutline from "@/components/tree/TreeOutline";
 import PersonDialog from "@/components/person/PersonDialog";
 import { clanApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
-import { Input } from "@/components/ui/input";
 import type { Person, Relationship, Marriage, FamilyTreeData } from "@/types";
 
 function getSubtreeData(
@@ -83,12 +82,6 @@ function TreePageContent() {
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { canEdit } = useAccess();
-  const outlineMatchCount = outlineSearch
-    ? persons.filter((p) =>
-        [p.lastName || "—", p.middleName, p.firstName].filter(Boolean).join(" ")
-          .toLowerCase().includes(outlineSearch.toLowerCase())
-      ).length
-    : 0;
 
   const mutate = async (loadingMsg: string, successMsg: string, fn: () => Promise<void>) => {
     setIsMutating(true);
@@ -302,52 +295,37 @@ function TreePageContent() {
   return (
     <div className="flex flex-1 bg-white overflow-hidden">
       <div className="flex flex-col flex-1 overflow-hidden">
-      <header className="bg-white border-b px-4 sm:px-6 shrink-0">
-        <div className="flex items-center gap-3 py-4">
-          <Link href="/events" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
-          {isMutating && <Loader2 size={16} className="animate-spin text-gray-400" />}
-          {rootPersonId && (() => {
-            const rootPerson = persons.find((p) => p.id === rootPersonId);
-            const name = rootPerson ? [rootPerson.lastName || "—", rootPerson.middleName, rootPerson.firstName].filter(Boolean).join(" ") : "";
-            return (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 text-sm text-brand-700">
-                <span>Cây từ: <strong>{name}</strong></span>
-                <button
-                  onClick={() => handleSetRoot(null)}
-                  className="rounded-full hover:bg-brand-100 p-0.5 transition-colors"
-                  aria-label="Xem toàn bộ"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            );
-          })()}
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "graph" | "outline")}>
-            <TabsList>
-              <TabsTrigger value="outline" className="flex items-center gap-1.5">
-                <List size={14} />
-                Đơn giản
-              </TabsTrigger>
-              <TabsTrigger value="graph" className="flex items-center gap-1.5">
-                <Network size={14} />
-                Sơ đồ
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        {viewMode === "outline" && (
-          <div className="flex items-center justify-end gap-2 pb-3">
-            {outlineSearch && (
-              <span className="text-xs text-gray-500 shrink-0">{outlineMatchCount} kết quả</span>
-            )}
-            <Input
-              placeholder="Tìm kiếm..."
-              value={outlineSearch}
-              onChange={(e) => setOutlineSearch(e.target.value)}
-              className="h-8 w-44 text-sm"
-            />
-          </div>
-        )}
+      <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center gap-3 shrink-0">
+        <Link href="/events" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
+        {isMutating && <Loader2 size={16} className="animate-spin text-gray-400" />}
+        {rootPersonId && (() => {
+          const rootPerson = persons.find((p) => p.id === rootPersonId);
+          const name = rootPerson ? [rootPerson.lastName || "—", rootPerson.middleName, rootPerson.firstName].filter(Boolean).join(" ") : "";
+          return (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 text-sm text-brand-700">
+              <span>Cây từ: <strong>{name}</strong></span>
+              <button
+                onClick={() => handleSetRoot(null)}
+                className="rounded-full hover:bg-brand-100 p-0.5 transition-colors"
+                aria-label="Xem toàn bộ"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          );
+        })()}
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "graph" | "outline")}>
+          <TabsList>
+            <TabsTrigger value="outline" className="flex items-center gap-1.5">
+              <List size={14} />
+              Đơn giản
+            </TabsTrigger>
+            <TabsTrigger value="graph" className="flex items-center gap-1.5">
+              <Network size={14} />
+              Sơ đồ
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -361,6 +339,7 @@ function TreePageContent() {
               selectedId={highlightId ?? selected?.id ?? null}
               superAdminId={superAdminId}
               search={outlineSearch}
+              onSearchChange={setOutlineSearch}
               onSelect={(person) => {
                 setHighlightId(person.id);
                 if (window.innerWidth >= 640) setSelected(person);
