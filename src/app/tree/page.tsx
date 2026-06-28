@@ -323,13 +323,16 @@ function TreePageContent() {
           );
         })()}
         <div className="flex items-center gap-2 shrink-0">
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "graph" | "outline")}>
+          <Tabs value={viewMode} onValueChange={(v) => {
+            if (v === "graph") { toast("Tính năng đang phát triển"); return; }
+            setViewMode(v as "graph" | "outline");
+          }}>
             <TabsList>
               <TabsTrigger value="outline" className="flex items-center gap-1.5">
                 <List size={14} />
                 Đơn giản
               </TabsTrigger>
-              <TabsTrigger value="graph" disabled className="flex items-center gap-1.5">
+              <TabsTrigger value="graph" className="flex items-center gap-1.5">
                 <Network size={14} />
                 Sơ đồ
               </TabsTrigger>

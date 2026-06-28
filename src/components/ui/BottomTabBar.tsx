@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Network, Settings } from "lucide-react";
+import { Home, Users, Network, Settings } from "lucide-react";
 
 const LIST_ROUTES = ["/members", "/events", "/families"];
 
 const tabs = [
+  {
+    href: "/",
+    label: "Trang chủ",
+    icon: Home,
+    match: (p: string) => p === "/",
+  },
   {
     href: "/members",
     label: "Danh sách",
