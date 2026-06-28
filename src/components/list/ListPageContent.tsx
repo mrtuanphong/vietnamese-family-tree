@@ -262,8 +262,8 @@ function FamilyCard({
   const { spouse1, spouse2, children } = family;
 
   const spouseClass = (p: Person) =>
-    `flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-brand-50 transition-colors min-w-0 cursor-default ${
-      selectedPersonId === p.id ? "bg-brand-50 ring-1 ring-inset ring-brand-200" : ""
+    `flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors min-w-0 cursor-default ${
+      selectedPersonId === p.id ? "bg-brand-500 text-white" : "hover:bg-brand-50"
     }`;
 
   return (
@@ -272,7 +272,7 @@ function FamilyCard({
         {spouse1 && (
           <button onClick={() => onSelectPerson(spouse1)} className={spouseClass(spouse1)}>
             <Avatar person={spouse1} isFirstChild={spouse1.childOrder === 1} />
-            <span className={`font-semibold truncate ${selectedPersonId === spouse1.id ? "text-brand-600" : ""}`}>{fullName(spouse1)}</span>
+            <span className="font-semibold truncate">{fullName(spouse1)}</span>
             <OutsiderBadge label={outsiderLabel(spouse1)} />
           </button>
         )}
@@ -281,7 +281,7 @@ function FamilyCard({
             <Heart size={14} className="text-pink-400 shrink-0" fill="currentColor" />
             <button onClick={() => onSelectPerson(spouse2)} className={spouseClass(spouse2)}>
               <Avatar person={spouse2} isFirstChild={spouse2.childOrder === 1} />
-              <span className={`font-semibold truncate ${selectedPersonId === spouse2.id ? "text-brand-600" : ""}`}>{fullName(spouse2)}</span>
+              <span className="font-semibold truncate">{fullName(spouse2)}</span>
               <OutsiderBadge label={outsiderLabel(spouse2)} />
             </button>
           </>
@@ -304,17 +304,17 @@ function FamilyCard({
                 <button
                   key={child.id}
                   onClick={() => onSelectPerson(child)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-brand-50 transition-colors group text-left cursor-default ${
-                    isSelected ? "bg-brand-50 ring-1 ring-inset ring-brand-200" : ""
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors group text-left cursor-default ${
+                    isSelected ? "bg-brand-500 text-white" : "hover:bg-brand-50"
                   }`}
                 >
                   <Avatar person={child} size="sm" isFirstChild={child.childOrder === 1} />
                   <div className="flex-1 min-w-0">
-                    <span className={`font-medium transition-colors ${isSelected ? "text-brand-600 font-bold" : "group-hover:text-brand-600"}`}>
+                    <span className="font-medium">
                       {fullName(child)}
                     </span>
                     {(years || child.generation != null || child.childOrder != null) && (
-                      <span className="text-xs text-gray-400 ml-2">
+                      <span className={`text-xs ml-2 ${isSelected ? "text-white/70" : "text-gray-400"}`}>
                         {[
                           child.childOrder != null ? `Con thứ ${child.childOrder}` : null,
                           child.generation != null ? `Đời ${child.generation}` : null,
