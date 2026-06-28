@@ -74,10 +74,10 @@ export default function ClanPage() {
 
   const superAdmin = persons.find((p) => p.id === form.superAdminId);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Đang tải...</div>;
+  if (loading) return <div className="flex-1 flex items-center justify-center text-gray-400">Đang tải...</div>;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex-1 overflow-y-auto bg-white">
 
       <main className="max-w-2xl mx-auto px-4 py-8 pb-24 sm:pb-8">
         <form onSubmit={handleSubmit}>

@@ -351,7 +351,7 @@ function TreePageContent() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className={`flex-1 ${viewMode === "outline" ? "flex flex-col" : ""}`}>
+        <div className="flex-1 flex flex-col overflow-hidden">
           {viewMode === "outline" ? (
             <TreeOutline
               persons={persons}

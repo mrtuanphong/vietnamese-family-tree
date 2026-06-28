@@ -140,7 +140,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main: header + content */}
       <div
-        className="transition-all duration-200 flex flex-col min-h-screen"
+        className="transition-all duration-200 flex flex-col h-dvh"
         style={{ marginLeft: desktopOpen ? SIDEBAR_W : 0 }}
       >
         {/* Header */}
