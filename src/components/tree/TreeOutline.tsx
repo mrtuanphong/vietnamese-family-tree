@@ -149,16 +149,16 @@ function highlightName(name: string, search: string) {
   );
 }
 
-function PersonLabel({ person, superAdminId, search = "", isSelected = false }: { person: Person; superAdminId: string | null; search?: string; isSelected?: boolean }) {
+function PersonLabel({ person, superAdminId, search = "", isSelected = false, rowActive = false }: { person: Person; superAdminId: string | null; search?: string; isSelected?: boolean; rowActive?: boolean }) {
   const name = [person.lastName || "—", person.middleName, person.firstName].filter(Boolean).join(" ");
   const isMatch = !!search && name.toLowerCase().includes(search.toLowerCase());
   return (
     <span className="flex items-center gap-1 min-w-0">
-      <span className={`text-sm font-medium truncate ${isSelected ? "underline underline-offset-2" : ""} ${isMatch ? "bg-yellow-200 rounded-sm px-0.5" : ""}`}>
+      <span className={`text-sm font-medium truncate ${isSelected && !rowActive ? "underline underline-offset-2" : ""} ${isMatch && !rowActive ? "bg-yellow-200 rounded-sm px-0.5" : ""}`}>
         {highlightName(name, search)}
       </span>
       {person.generation != null && person.isClanMember !== false && (
-        <span className="text-[10px] px-1 py-0.5 bg-brand-100 text-brand-600 rounded font-medium shrink-0 leading-none">
+        <span className={`text-[10px] px-1 py-0.5 rounded font-medium shrink-0 leading-none ${rowActive ? "bg-white/20 text-white" : "bg-brand-100 text-brand-600"}`}>
           Đời {person.generation}
         </span>
       )}
@@ -195,12 +195,14 @@ function OutlineRow({
     ? node.spouses.filter((s) => s.id !== clanSpouse!.id)
     : node.spouses;
 
+  const rowActive = selectedId === node.person.id || node.spouses.some((s) => s.id === selectedId);
+
   return (
     <div data-person-id={node.person.id}>
       <div
         className={`flex items-center gap-0.5 py-0.5 px-1 rounded-md transition-colors ${
-          selectedId === node.person.id || node.spouses.some((s) => s.id === selectedId)
-            ? "bg-brand-50 ring-1 ring-inset ring-brand-300"
+          rowActive
+            ? "bg-brand-500 text-white"
             : hasHiddenMatch
             ? "animate-pulse bg-yellow-100 hover:bg-yellow-50"
             : "hover:bg-gray-100"
@@ -212,8 +214,10 @@ function OutlineRow({
       >
         <button
           onClick={() => hasChildren && onToggle(node.person.id)}
-          className={`shrink-0 w-4 h-4 flex items-center justify-center text-gray-400 rounded transition-transform duration-200 ${
-            hasChildren ? "hover:text-brand-600 cursor-pointer" : "opacity-0 pointer-events-none"
+          className={`shrink-0 w-4 h-4 flex items-center justify-center rounded transition-transform duration-200 ${
+            hasChildren
+              ? `cursor-pointer ${rowActive ? "text-white/70 hover:text-white" : "text-gray-400 hover:text-brand-600"}`
+              : "opacity-0 pointer-events-none"
           }`}
         >
           {expanded ? <MinusSquare size={13} strokeWidth={2} /> : <PlusSquare size={13} strokeWidth={2} />}
@@ -223,7 +227,7 @@ function OutlineRow({
           onClick={() => onSelect(primary)}
         >
           <MiniAvatar person={primary} />
-          <PersonLabel person={primary} superAdminId={superAdminId} search={search} isSelected={selectedId === primary.id} />
+          <PersonLabel person={primary} superAdminId={superAdminId} search={search} isSelected={selectedId === primary.id} rowActive={rowActive} />
         </div>
         {secondary && (
           <>
@@ -233,7 +237,7 @@ function OutlineRow({
               onClick={() => onSelect(secondary)}
             >
               <MiniAvatar person={secondary} />
-              <PersonLabel person={secondary} superAdminId={superAdminId} search={search} isSelected={selectedId === secondary.id} />
+              <PersonLabel person={secondary} superAdminId={superAdminId} search={search} isSelected={selectedId === secondary.id} rowActive={rowActive} />
             </div>
           </>
         )}
@@ -241,7 +245,7 @@ function OutlineRow({
           <div key={spouse.id} className="flex items-center gap-1.5 shrink-0 cursor-pointer" onClick={() => onSelect(spouse)}>
             <Heart size={9} className="text-pink-400 shrink-0 mx-1" fill="currentColor" />
             <MiniAvatar person={spouse} />
-            <PersonLabel person={spouse} superAdminId={superAdminId} search={search} isSelected={selectedId === spouse.id} />
+            <PersonLabel person={spouse} superAdminId={superAdminId} search={search} isSelected={selectedId === spouse.id} rowActive={rowActive} />
           </div>
         ))}
       </div>
