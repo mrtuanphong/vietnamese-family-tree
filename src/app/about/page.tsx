@@ -23,6 +23,9 @@ const whatsNew: WhatsNewEntry[] = [
       { label: "Bấm Xem cây → tự expand và cuộn đến người được chọn trong cây thư mục", badge: "improved" },
       { label: "Cây thư mục cho phép cuộn ngang trên mobile", badge: "improved" },
       { label: "Mobile: không hiện overlay khi mở cây từ danh sách", badge: "fixed" },
+      { label: "Danh sách: mặc định mở tab Sự kiện", badge: "improved" },
+      { label: "Mobile: bottom tab bar luôn hiển thị, chỉ vùng nội dung cuộn", badge: "improved" },
+      { label: "Bottom tab bar dùng flexbox thay vì fixed position", badge: "improved" },
     ],
   },
   {
