@@ -322,10 +322,7 @@ function TreePageContent() {
           );
         })()}
         <div className="flex items-center gap-2 shrink-0">
-          <Tabs value={viewMode} onValueChange={(v) => {
-            if (v === "graph") { toast("Tính năng đang phát triển"); return; }
-            setViewMode(v as "graph" | "outline");
-          }}>
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "graph" | "outline")}>
             <TabsList>
               <TabsTrigger value="outline" className="flex items-center gap-1.5">
                 <List size={14} />
@@ -372,6 +369,14 @@ function TreePageContent() {
               initialExpandSelected={!!urlSelectedId}
             />
           ) : (
+          <div className="flex-1 flex items-center justify-center text-center px-6">
+            <div className="flex flex-col items-center gap-3 text-gray-400">
+              <Network size={40} className="text-gray-200" />
+              <p className="font-medium text-gray-500">Tính năng đang phát triển</p>
+              <p className="text-sm">Sơ đồ cây gia phả sẽ sớm ra mắt.</p>
+            </div>
+          </div>
+          /* OLD GRAPH CODE — hidden until ready
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -387,6 +392,7 @@ function TreePageContent() {
             <Controls />
             <MiniMap />
           </ReactFlow>
+          */
           )}
         </div>
       </div>{/* end flex-1 overflow-hidden row */}
