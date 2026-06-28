@@ -303,7 +303,7 @@ function TreePageContent() {
     <div className="flex flex-1 bg-white overflow-hidden">
       <div className="flex flex-col flex-1 overflow-hidden">
       <header className="bg-white border-b px-4 sm:px-6 py-4 flex items-center gap-3 shrink-0">
-        <Link href="/members" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
+        <Link href="/events" className="hidden sm:block md:hidden text-sm text-gray-500 hover:text-gray-700">← Danh sách</Link>
         {isMutating && <Loader2 size={16} className="animate-spin text-gray-400" />}
         {rootPersonId && (() => {
           const rootPerson = persons.find((p) => p.id === rootPersonId);

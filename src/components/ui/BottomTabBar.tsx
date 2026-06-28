@@ -14,7 +14,7 @@ const tabs = [
     match: (p: string) => p === "/",
   },
   {
-    href: "/members",
+    href: "/events",
     label: "Danh sách",
     icon: Users,
     match: (p: string) => LIST_ROUTES.some((r) => p.startsWith(r)),

@@ -26,7 +26,7 @@ const LIST_ROUTES = ["/members", "/events", "/families"];
 
 const navItems = [
   { href: "/",        label: "Trang chủ",          active: (p: string) => p === "/",                                        icon: Home },
-  { href: "/members", label: "Danh sách",           active: (p: string) => LIST_ROUTES.some((r) => p.startsWith(r)),        icon: Users },
+  { href: "/events",  label: "Danh sách",           active: (p: string) => LIST_ROUTES.some((r) => p.startsWith(r)),        icon: Users },
   { href: "/tree",    label: "Cây gia phả",         active: (p: string) => p.startsWith("/tree"),                           icon: Network },
   { href: "/clan",    label: "Thông tin dòng họ",   active: (p: string) => p.startsWith("/clan"),                           icon: Settings },
   { href: "/about",   label: "Về phần mềm",         active: (p: string) => p.startsWith("/about"),                          icon: Info },
