@@ -197,12 +197,17 @@ function OutlineRow({
 
   const rowActive = selectedId === node.person.id || node.spouses.some((s) => s.id === selectedId);
 
+  const personChipClass = (pid: string) =>
+    `flex items-center gap-1.5 cursor-pointer rounded-md px-1 py-0.5 transition-colors ${
+      selectedId === pid ? "bg-brand-500 text-white" : "hover:bg-brand-50"
+    }`;
+
   return (
     <div data-person-id={node.person.id}>
       <div
-        className={`flex items-center gap-0.5 py-0.5 px-1 rounded-md transition-colors ${
+        className={`flex items-center gap-0.5 py-1 px-1 rounded-md transition-colors ${
           rowActive
-            ? "bg-brand-500 text-white"
+            ? "bg-brand-50"
             : hasHiddenMatch
             ? "animate-pulse bg-yellow-100 hover:bg-yellow-50"
             : "hover:bg-gray-100"
@@ -216,36 +221,30 @@ function OutlineRow({
           onClick={() => hasChildren && onToggle(node.person.id)}
           className={`shrink-0 w-4 h-4 flex items-center justify-center rounded transition-transform duration-200 ${
             hasChildren
-              ? `cursor-pointer ${rowActive ? "text-white/70 hover:text-white" : "text-gray-400 hover:text-brand-600"}`
+              ? "cursor-pointer text-gray-400 hover:text-brand-600"
               : "opacity-0 pointer-events-none"
           }`}
         >
           {expanded ? <MinusSquare size={13} strokeWidth={2} /> : <PlusSquare size={13} strokeWidth={2} />}
         </button>
-        <div
-          className="flex items-center gap-1.5 min-w-0 cursor-pointer"
-          onClick={() => onSelect(primary)}
-        >
+        <div className={personChipClass(primary.id)} onClick={() => onSelect(primary)}>
           <MiniAvatar person={primary} />
-          <PersonLabel person={primary} superAdminId={superAdminId} search={search} isSelected={selectedId === primary.id} rowActive={rowActive} />
+          <PersonLabel person={primary} superAdminId={superAdminId} search={search} isSelected={selectedId === primary.id} rowActive={selectedId === primary.id} />
         </div>
         {secondary && (
           <>
             <Heart size={9} className="text-pink-400 shrink-0 mx-1" fill="currentColor" />
-            <div
-              className="flex items-center gap-1.5 shrink-0 cursor-pointer"
-              onClick={() => onSelect(secondary)}
-            >
+            <div className={personChipClass(secondary.id)} onClick={() => onSelect(secondary)}>
               <MiniAvatar person={secondary} />
-              <PersonLabel person={secondary} superAdminId={superAdminId} search={search} isSelected={selectedId === secondary.id} rowActive={rowActive} />
+              <PersonLabel person={secondary} superAdminId={superAdminId} search={search} isSelected={selectedId === secondary.id} rowActive={selectedId === secondary.id} />
             </div>
           </>
         )}
         {remainingSpouses.map((spouse) => (
-          <div key={spouse.id} className="flex items-center gap-1.5 shrink-0 cursor-pointer" onClick={() => onSelect(spouse)}>
+          <div key={spouse.id} className={personChipClass(spouse.id)} onClick={() => onSelect(spouse)}>
             <Heart size={9} className="text-pink-400 shrink-0 mx-1" fill="currentColor" />
             <MiniAvatar person={spouse} />
-            <PersonLabel person={spouse} superAdminId={superAdminId} search={search} isSelected={selectedId === spouse.id} rowActive={rowActive} />
+            <PersonLabel person={spouse} superAdminId={superAdminId} search={search} isSelected={selectedId === spouse.id} rowActive={selectedId === spouse.id} />
           </div>
         ))}
       </div>
