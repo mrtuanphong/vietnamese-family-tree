@@ -400,7 +400,7 @@ export default function TreeOutline({
               placeholder="Tìm kiếm..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-7 w-28 text-xs"
+              className="h-6 w-32 text-xs"
             />
           </div>
         )}

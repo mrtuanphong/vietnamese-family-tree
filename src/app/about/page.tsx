@@ -26,6 +26,10 @@ const whatsNew: WhatsNewEntry[] = [
       { label: "Danh sách: mặc định mở tab Sự kiện", badge: "improved" },
       { label: "Mobile: bottom tab bar luôn hiển thị, chỉ vùng nội dung cuộn", badge: "improved" },
       { label: "Bottom tab bar dùng flexbox thay vì fixed position", badge: "improved" },
+      { label: "Tab Gia đình: click người mở sidebar chi tiết thay vì chuyển sang cây", badge: "improved" },
+      { label: "Item đang chọn dùng highlight filled (nền đậm) thay vì ring — rõ hơn trên cả danh sách và cây thư mục", badge: "improved" },
+      { label: "Cây thư mục: highlight per-person trong cùng 1 row, phân biệt rõ khi row có 2 người", badge: "improved" },
+      { label: "Ô tìm kiếm cây thư mục chuyển vào toolbar, gọn hơn", badge: "improved" },
     ],
   },
   {
