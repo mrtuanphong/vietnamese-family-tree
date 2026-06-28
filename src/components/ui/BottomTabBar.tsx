@@ -37,7 +37,7 @@ export default function BottomTabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 sm:hidden bg-white border-t safe-bottom">
+    <nav className="sm:hidden bg-white border-t safe-bottom shrink-0">
       <div className="flex">
         {tabs.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname);

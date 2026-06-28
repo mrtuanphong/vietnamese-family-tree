@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Menu, Users, Network, Settings, Info,
+  Menu, Home, Users, Network, Settings, Info,
   Plus, UserPlus, CalendarDays,
   CircleUser, UserCog, Building2,
   LogOut, Lock,
 } from "lucide-react";
+import BottomTabBar from "@/components/ui/BottomTabBar";
 import { clanApi, personsApi } from "@/lib/api";
 import { AccessContext } from "@/lib/AccessContext";
 import PersonDialog from "@/components/person/PersonDialog";
@@ -21,11 +22,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const LIST_ROUTES = ["/members", "/events", "/families"];
+
 const navItems = [
-  { href: "/",       label: "Danh sách",         exact: true,  icon: Users },
-  { href: "/tree",   label: "Cây gia phả",        exact: false, icon: Network },
-  { href: "/clan",   label: "Thông tin dòng họ",  exact: false, icon: Settings },
-  { href: "/about",  label: "Về phần mềm",        exact: false, icon: Info },
+  { href: "/",        label: "Trang chủ",          active: (p: string) => p === "/",                                        icon: Home },
+  { href: "/members", label: "Danh sách",           active: (p: string) => LIST_ROUTES.some((r) => p.startsWith(r)),        icon: Users },
+  { href: "/tree",    label: "Cây gia phả",         active: (p: string) => p.startsWith("/tree"),                           icon: Network },
+  { href: "/clan",    label: "Thông tin dòng họ",   active: (p: string) => p.startsWith("/clan"),                           icon: Settings },
+  { href: "/about",   label: "Về phần mềm",         active: (p: string) => p.startsWith("/about"),                          icon: Info },
 ];
 
 const HEADER_H = 56;
@@ -66,11 +70,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const desktopOpen = mounted && open;
 
   const pageTitle = (() => {
-    if (pathname === "/") return "Danh sách";
+    if (pathname === "/") return "Trang chủ";
+    if (LIST_ROUTES.some((r) => pathname.startsWith(r))) return "Danh sách";
     if (pathname.startsWith("/tree")) return "Cây gia phả";
     if (pathname.startsWith("/clan")) return "Thông tin dòng họ";
     if (pathname.startsWith("/about")) return "Về phần mềm";
-    if (pathname.startsWith("/person")) return "Chi tiết";
     return "";
   })();
 
@@ -113,8 +117,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-2 border-r">
-          {navItems.map(({ href, label, exact, icon: Icon }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href);
+          {navItems.map(({ href, label, active: isActive, icon: Icon }) => {
+            const active = isActive(pathname);
             return (
               <Link
                 key={href}
@@ -244,10 +248,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <AccessContext.Provider value={{ canEdit }}>
-          <div className="flex-1">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {children}
           </div>
         </AccessContext.Provider>
+        <BottomTabBar />
       </div>
 
       <PersonDialog

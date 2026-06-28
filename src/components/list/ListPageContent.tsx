@@ -11,7 +11,6 @@ import { personsApi, clanApi, relationshipsApi, marriagesApi } from "@/lib/api";
 import { useAccess } from "@/lib/AccessContext";
 import PersonDialog from "@/components/person/PersonDialog";
 import PersonSidebar from "@/components/tree/PersonSidebar";
-import BottomTabBar from "@/components/ui/BottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -510,9 +509,9 @@ export default function ListPageContent({
   void clanLastName;
 
   return (
-    <div className="h-[calc(100vh-56px)] bg-white flex overflow-hidden">
+    <div className="flex-1 bg-white flex overflow-hidden">
 
-      <main className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 py-6 pb-20 sm:pb-6">
+      <main className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 py-6">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="events" className="flex-1">Sự kiện</TabsTrigger>
@@ -922,7 +921,6 @@ export default function ListPageContent({
         onSubmit={handleEdit}
       />
 
-      <BottomTabBar />
     </div>
   );
 }
