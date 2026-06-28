@@ -71,7 +71,7 @@ function collectAllIds(nodes: OutlineNode[]): string[] {
 }
 
 function personName(p: Person) {
-  return [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ").toLowerCase();
+  return [p.lastName || "—", p.middleName, p.firstName].filter(Boolean).join(" ").toLowerCase();
 }
 
 function hasDescendantMatch(node: OutlineNode, search: string): boolean {
@@ -150,7 +150,7 @@ function highlightName(name: string, search: string) {
 }
 
 function PersonLabel({ person, superAdminId, search = "", isSelected = false }: { person: Person; superAdminId: string | null; search?: string; isSelected?: boolean }) {
-  const name = [person.lastName, person.middleName, person.firstName].filter(Boolean).join(" ");
+  const name = [person.lastName || "—", person.middleName, person.firstName].filter(Boolean).join(" ");
   const isMatch = !!search && name.toLowerCase().includes(search.toLowerCase());
   return (
     <span className="flex items-center gap-1 min-w-0">

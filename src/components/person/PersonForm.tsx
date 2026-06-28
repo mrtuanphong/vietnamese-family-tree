@@ -118,8 +118,8 @@ export default function PersonForm({ initial, defaultLastName, clanLastName, pla
         <TabsContent value="basic" className="flex flex-col gap-4 mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="font-medium block mb-1">Họ *</label>
-              <Input required value={form.lastName} onChange={set("lastName")} placeholder={clanLastName ?? "Nguyễn"} />
+              <label className="font-medium block mb-1">Họ</label>
+              <Input value={form.lastName} onChange={set("lastName")} placeholder={clanLastName ?? "Nguyễn"} />
             </div>
             <div>
               <label className="font-medium block mb-1">Đệm</label>

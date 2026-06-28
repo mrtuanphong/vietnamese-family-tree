@@ -86,7 +86,7 @@ function TreePageContent() {
   const { canEdit } = useAccess();
   const outlineMatchCount = outlineSearch
     ? persons.filter((p) =>
-        [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ")
+        [p.lastName || "—", p.middleName, p.firstName].filter(Boolean).join(" ")
           .toLowerCase().includes(outlineSearch.toLowerCase())
       ).length
     : 0;
@@ -243,7 +243,7 @@ function TreePageContent() {
 
   const handleDeletePerson = async (id: string) => {
     const person = persons.find((p) => p.id === id);
-    const name = person ? [person.lastName, person.firstName].filter(Boolean).join(" ") : "người này";
+    const name = person ? [person.lastName || "—", person.firstName].filter(Boolean).join(" ") : "người này";
     if (!confirm(`Xoá "${name}" khỏi dòng họ?`)) return;
     await mutate("Đang xoá...", `Đã xoá ${name}`, async () => {
       await personsApi.delete(id);
@@ -308,7 +308,7 @@ function TreePageContent() {
         {isMutating && <Loader2 size={16} className="animate-spin text-gray-400" />}
         {rootPersonId && (() => {
           const rootPerson = persons.find((p) => p.id === rootPersonId);
-          const name = rootPerson ? [rootPerson.lastName, rootPerson.middleName, rootPerson.firstName].filter(Boolean).join(" ") : "";
+          const name = rootPerson ? [rootPerson.lastName || "—", rootPerson.middleName, rootPerson.firstName].filter(Boolean).join(" ") : "";
           return (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 text-sm text-brand-700">
               <span>Cây từ: <strong>{name}</strong></span>

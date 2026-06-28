@@ -27,7 +27,7 @@ const defaultForm: ClanForm = {
 };
 
 function fullName(p: Person) {
-  return [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ");
+  return [p.lastName || "—", p.middleName, p.firstName].filter(Boolean).join(" ");
 }
 
 export default function ClanPage() {

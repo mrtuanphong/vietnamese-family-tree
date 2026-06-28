@@ -22,7 +22,7 @@ function outsiderLabel(person: Person): string | null {
 export default function PersonNode({ data }: { data: PersonNodeData }) {
   const { person, isSelected, isSuperAdmin, onSelect, onAddChild } = data;
   const outsider = outsiderLabel(person);
-  const name = [person.lastName, person.middleName, person.firstName].filter(Boolean).join(" ");
+  const name = [person.lastName || "—", person.middleName, person.firstName].filter(Boolean).join(" ");
   const years = "";
   const deceased = !!person.deathDateLunar;
 

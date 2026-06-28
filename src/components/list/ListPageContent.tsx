@@ -35,7 +35,7 @@ interface FamilyEvent {
 }
 
 function fullName(p: Person) {
-  return [p.lastName, p.middleName, p.firstName].filter(Boolean).join(" ");
+  return [p.lastName || "—", p.middleName, p.firstName].filter(Boolean).join(" ");
 }
 
 function normalize(str: string): string {
