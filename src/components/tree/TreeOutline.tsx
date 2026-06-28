@@ -196,7 +196,7 @@ function OutlineRow({
     : node.spouses;
 
   return (
-    <div>
+    <div data-person-id={node.person.id}>
       <div
         className={`flex items-center gap-0.5 py-0.5 px-1 rounded-md transition-colors ${
           selectedId === node.person.id || node.spouses.some((s) => s.id === selectedId)
@@ -283,6 +283,7 @@ export default function TreeOutline({
   search = "",
   onSelect,
   onSetRoot,
+  initialExpandSelected = false,
 }: {
   persons: Person[];
   relationships: Relationship[];
@@ -293,6 +294,7 @@ export default function TreeOutline({
   search?: string;
   onSelect: (p: Person) => void;
   onSetRoot?: (id: string | null) => void;
+  initialExpandSelected?: boolean;
 }) {
   const forest = useMemo(
     () => buildForest(persons, relationships, marriages, rootPersonId),
@@ -305,12 +307,26 @@ export default function TreeOutline({
   );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const initialized = useRef<string | null | undefined>(undefined);
+  const autoExpandDone = useRef(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (initialized.current !== rootPersonId && defaultIds.length > 0) {
       initialized.current = rootPersonId;
       setExpandedIds(new Set(defaultIds));
     }
   }, [defaultIds, rootPersonId]);
+
+  useEffect(() => {
+    if (!initialExpandSelected || !selectedId || forest.length === 0 || autoExpandDone.current) return;
+    const ancestorPath = findAncestorPath(forest, selectedId);
+    const subtreeIds = collectSubtreeIds(forest, selectedId);
+    setExpandedIds(new Set([...ancestorPath, ...subtreeIds]));
+    autoExpandDone.current = true;
+    setTimeout(() => {
+      const el = scrollContainerRef.current?.querySelector(`[data-person-id="${selectedId}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+  }, [forest, selectedId, initialExpandSelected]);
 
   const onToggle = (id: string) =>
     setExpandedIds((prev) => {
@@ -363,7 +379,8 @@ export default function TreeOutline({
           Xem cây từ người đang chọn
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 select-none space-y-0.5">
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto p-3 select-none space-y-0.5">
+        <div className="min-w-max">
         {forest.map((node) => (
           <OutlineRow
             key={node.person.id}
@@ -376,6 +393,7 @@ export default function TreeOutline({
             search={search}
           />
         ))}
+        </div>
       </div>
     </div>
   );

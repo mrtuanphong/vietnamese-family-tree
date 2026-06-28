@@ -137,7 +137,7 @@ function TreePageContent() {
     setEdges(e);
     if (selectPerson) {
       const fresh = data.persons.find((x) => x.id === selectPerson.id);
-      setSelected(fresh ?? null);
+      if (window.innerWidth >= 640) setSelected(fresh ?? null);
       setHighlightId(fresh?.id ?? null);
     }
   };
@@ -367,6 +367,7 @@ function TreePageContent() {
                 if (window.innerWidth >= 640) setSelected(person);
               }}
               onSetRoot={handleSetRoot}
+              initialExpandSelected={!!urlSelectedId}
             />
           ) : (
           <ReactFlow

@@ -11,6 +11,15 @@ interface WhatsNewEntry {
 
 const whatsNew: WhatsNewEntry[] = [
   {
+    date: "28/06/2026",
+    items: [
+      { label: "Tab Người đổi tên thành Thành viên", badge: "improved" },
+      { label: "Bấm Xem cây → tự expand và cuộn đến người được chọn trong cây thư mục", badge: "improved" },
+      { label: "Cây thư mục cho phép cuộn ngang trên mobile", badge: "improved" },
+      { label: "Mobile: không hiện overlay khi mở cây từ danh sách", badge: "fixed" },
+    ],
+  },
+  {
     date: "22/06/2026",
     items: [
       { label: "Tab Sự kiện: click chọn người → mở sidebar Thông tin cá nhân", badge: "new" },

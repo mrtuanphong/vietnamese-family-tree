@@ -474,7 +474,7 @@ export default function PeoplePage() {
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="events" className="flex-1">Sự kiện</TabsTrigger>
-          <TabsTrigger value="people" className="flex-1">Người</TabsTrigger>
+          <TabsTrigger value="people" className="flex-1">Thành viên</TabsTrigger>
           <TabsTrigger value="families" className="flex-1">Gia đình</TabsTrigger>
         </TabsList>
 
