@@ -4,10 +4,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Users, Network, Settings } from "lucide-react";
 
+const LIST_ROUTES = ["/members", "/events", "/families"];
+
 const tabs = [
-  { href: "/",     label: "Danh sách",   icon: Users },
-  { href: "/tree", label: "Cây gia phả", icon: Network },
-  { href: "/clan", label: "Dòng họ",     icon: Settings },
+  {
+    href: "/members",
+    label: "Danh sách",
+    icon: Users,
+    match: (p: string) => LIST_ROUTES.some((r) => p.startsWith(r)),
+  },
+  {
+    href: "/tree",
+    label: "Cây gia phả",
+    icon: Network,
+    match: (p: string) => p.startsWith("/tree"),
+  },
+  {
+    href: "/clan",
+    label: "Dòng họ",
+    icon: Settings,
+    match: (p: string) => p.startsWith("/clan"),
+  },
 ];
 
 export default function BottomTabBar() {
@@ -16,8 +33,8 @@ export default function BottomTabBar() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 sm:hidden bg-white border-t safe-bottom">
       <div className="flex">
-        {tabs.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+        {tabs.map(({ href, label, icon: Icon, match }) => {
+          const active = match(pathname);
           return (
             <Link
               key={href}

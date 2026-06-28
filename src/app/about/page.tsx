@@ -13,6 +13,9 @@ const whatsNew: WhatsNewEntry[] = [
   {
     date: "28/06/2026",
     items: [
+      { label: "URL riêng cho từng tab: /events · /members · /families", badge: "new" },
+      { label: "URL riêng khi xem chi tiết thành viên: /members/<id> — có thể share link", badge: "new" },
+      { label: "Trang chủ dashboard tại /", badge: "new" },
       { label: "Tab Người đổi tên thành Thành viên", badge: "improved" },
       { label: "Bấm Xem cây → tự expand và cuộn đến người được chọn trong cây thư mục", badge: "improved" },
       { label: "Cây thư mục cho phép cuộn ngang trên mobile", badge: "improved" },
